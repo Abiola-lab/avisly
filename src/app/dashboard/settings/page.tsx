@@ -97,7 +97,7 @@ export default function SettingsPage() {
     }
 
     const handleReset = async () => {
-        if (!confirm('DEBUG : Voulez-vous vraiment supprimer votre abonnement en base Supabase ? Cela ne l\'annulera pas dans Stripe.')) return
+        if (!confirm('ATTENTION : Cette action supprime UNIQUEMENT l\'affichage de l\'abonnement dans Avisly (Supabase). \n\nVotre abonnement Stripe RESTERA ACTIF et vous continuerez d\'être prélevé. \n\nUtilisez ceci uniquement pour tester l\'interface d\'achat. Confirmer ?')) return
         setSubLoading(true)
         try {
             const res = await fetch('/api/stripe/reset', { method: 'POST' })
@@ -324,8 +324,8 @@ export default function SettingsPage() {
                     const { status, cancel_at_period_end, trial_end, current_period_end, cancel_at } = subscription;
                     const isTrial = status === 'trialing';
                     const isActive = status === 'active';
-                    const isCanceled = cancel_at_period_end;
-                    const isEnded = status === 'canceled' || status === 'ended';
+                    const isScheduledToCancel = cancel_at_period_end || !!cancel_at;
+                    const isEnded = status === 'canceled' || status === 'unpaid';
                     const isIssue = status === 'past_due' || status === 'unpaid' || status === 'incomplete';
 
                     const endDate = isTrial ? trial_end : (cancel_at || current_period_end);
@@ -340,13 +340,13 @@ export default function SettingsPage() {
                     let description = "";
 
                     if (isTrial) {
-                        statusText = isCanceled ? "Essai (Annulation Planifiée)" : "Essai Gratuit";
-                        statusColor = isCanceled ? "bg-orange-500" : "bg-green-500";
-                        description = isCanceled ? `S'arrête définitivement le ${dateFormatted}` : `Offre Pro active jusqu'au ${dateFormatted}`;
+                        statusText = isScheduledToCancel ? "Essai (Annulation Planifiée)" : "Essai Gratuit";
+                        statusColor = isScheduledToCancel ? "bg-orange-500" : "bg-green-500";
+                        description = isScheduledToCancel ? `S'arrête définitivement le ${dateFormatted}` : `Offre Pro active jusqu'au ${dateFormatted}`;
                     } else if (isActive) {
-                        statusText = isCanceled ? "Pro (Ne se renouvellera pas)" : "Abonnement Pro Actif";
-                        statusColor = isCanceled ? "bg-orange-500" : "bg-green-500";
-                        description = isCanceled ? `Fin de l'accès le ${dateFormatted}` : `Prochain renouvellement : ${dateFormatted}`;
+                        statusText = isScheduledToCancel ? "Pro (Ne se renouvellera pas)" : "Abonnement Pro Actif";
+                        statusColor = isScheduledToCancel ? "bg-orange-500" : "bg-green-500";
+                        description = isScheduledToCancel ? `Fin de l'accès le ${dateFormatted}` : `Prochain renouvellement : ${dateFormatted}`;
                     } else if (isIssue) {
                         statusText = "Défaut de Paiement";
                         statusColor = "bg-red-500";
@@ -403,16 +403,22 @@ export default function SettingsPage() {
                                 </p>
                             </div>
 
-                            <div className="pt-4 border-t border-gray-100 flex justify-between items-center">
-                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                                    ID Client : {subscription.stripe_customer_id}
+                            <div className="pt-4 border-t border-gray-100 flex flex-col gap-3">
+                                <div className="flex justify-between items-center">
+                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                                        ID Client : {subscription.stripe_customer_id}
+                                    </p>
+                                    <button
+                                        onClick={handleReset}
+                                        className="text-[10px] text-red-200 font-bold uppercase tracking-widest hover:text-red-500 transition-colors"
+                                    >
+                                        [ RESET DB DEBUG ]
+                                    </button>
+                                </div>
+                                <p className="text-[9px] text-gray-300 italic text-right leading-none">
+                                    Attention : Le reset supprime uniquement l'entrée en base de données Avisly. <br />
+                                    L'abonnement Stripe RESTE ACTIF côté Stripe.
                                 </p>
-                                <button
-                                    onClick={handleReset}
-                                    className="text-[10px] text-red-200 font-bold uppercase tracking-widest hover:text-red-600 transition-colors"
-                                >
-                                    [ DEBUG RESET DB ONLY - NO STRIPE IMPACT ]
-                                </button>
                             </div>
                         </div>
                     );

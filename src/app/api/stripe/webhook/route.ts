@@ -69,7 +69,7 @@ export async function POST(req: Request) {
 
             case 'customer.subscription.updated': {
                 const subscription = event.data.object as any;
-                console.log(`🔄 Subscription updated: ${subscription.id}`);
+                console.log(`🔄 Subscription updated: ${subscription.id} (Status: ${subscription.status}, CancelAtPeriodEnd: ${subscription.cancel_at_period_end})`);
 
                 const { error } = await supabaseAdmin.from('subscriptions').update({
                     status: subscription.status,
@@ -94,7 +94,8 @@ export async function POST(req: Request) {
                     status: 'canceled',
                     cancel_at_period_end: false,
                     current_period_end: safeStripeDate(subscription.current_period_end),
-                    canceled_at: safeStripeDate(subscription.canceled_at || Math.floor(Date.now() / 1000))
+                    canceled_at: safeStripeDate(subscription.canceled_at || Math.floor(Date.now() / 1000)),
+                    cancel_at: null // Une fois supprimé, la date d'annulation prévue n'a plus lieu d'être
                 })
                     .eq('stripe_subscription_id', subscription.id);
 
