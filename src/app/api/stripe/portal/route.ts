@@ -33,6 +33,11 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Pas de client Stripe trouvé. Veuillez d'abord souscrire à une offre." }, { status: 400 });
         }
 
+        if (!process.env.NEXT_PUBLIC_SITE_URL) {
+            console.error('❌ NEXT_PUBLIC_SITE_URL is not set');
+            return NextResponse.json({ error: 'Configuration serveur manquante (URL du site)' }, { status: 500 });
+        }
+
         // 3. Create portal session
         const portalSession = await stripe.billingPortal.sessions.create({
             customer: sub.stripe_customer_id,

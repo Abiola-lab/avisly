@@ -52,7 +52,10 @@ export async function POST(req: Request) {
                         stripe_subscription_id: subscriptionId,
                         status: subscription.status,
                         plan_id: subscription.items.data[0].price.id,
-                        current_period_end: safeStripeDate(subscription.current_period_end)
+                        cancel_at_period_end: subscription.cancel_at_period_end,
+                        current_period_end: safeStripeDate(subscription.current_period_end),
+                        trial_end: safeStripeDate(subscription.trial_end),
+                        canceled_at: safeStripeDate(subscription.canceled_at)
                     });
 
                     if (error) {
@@ -70,7 +73,10 @@ export async function POST(req: Request) {
                 const { error } = await supabaseAdmin.from('subscriptions').update({
                     status: subscription.status,
                     plan_id: subscription.items.data[0].price.id,
-                    current_period_end: safeStripeDate(subscription.current_period_end)
+                    cancel_at_period_end: subscription.cancel_at_period_end,
+                    current_period_end: safeStripeDate(subscription.current_period_end),
+                    trial_end: safeStripeDate(subscription.trial_end),
+                    canceled_at: safeStripeDate(subscription.canceled_at)
                 })
                     .eq('stripe_subscription_id', subscription.id);
 
@@ -84,7 +90,9 @@ export async function POST(req: Request) {
 
                 const { error } = await supabaseAdmin.from('subscriptions').update({
                     status: 'canceled',
-                    current_period_end: safeStripeDate(subscription.current_period_end)
+                    cancel_at_period_end: false,
+                    current_period_end: safeStripeDate(subscription.current_period_end),
+                    canceled_at: safeStripeDate(subscription.canceled_at || Math.floor(Date.now() / 1000))
                 })
                     .eq('stripe_subscription_id', subscription.id);
 

@@ -1,12 +1,3 @@
-export const stripeDateToISO = (timestamp: number | null | undefined): string => {
-    if (!timestamp) return new Date().toISOString();
-    try {
-        return new Date(timestamp * 1000).toISOString();
-    } catch (e) {
-        return new Date().toISOString();
-    }
-};
-
 export const safeStripeDate = (timestamp: number | null | undefined): string | null => {
     if (!timestamp) return null;
     try {
@@ -16,4 +7,8 @@ export const safeStripeDate = (timestamp: number | null | undefined): string | n
     } catch (e) {
         return null;
     }
+};
+
+export const stripeDateToISO = (timestamp: number | null | undefined): string => {
+    return safeStripeDate(timestamp) || new Date().toISOString();
 };

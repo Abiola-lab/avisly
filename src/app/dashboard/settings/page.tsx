@@ -317,46 +317,84 @@ export default function SettingsPage() {
                     </div>
                 </div>
 
-                {subscription ? (
-                    <div className="space-y-6">
-                        <div className="flex items-center justify-between p-6 bg-gray-50 rounded-2xl border border-gray-200">
-                            <div>
-                                <p className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-1">Statut Actuel</p>
-                                <div className="flex items-center gap-2">
-                                    <span className={`w-3 h-3 rounded-full ${subscription.status === 'active' || subscription.status === 'trialing' ? 'bg-green-500' : 'bg-red-500'} animate-pulse`}></span>
-                                    <span className="text-lg font-black uppercase tracking-tight">
-                                        {subscription.status === 'trialing' ? 'Essai Gratuit' : subscription.status === 'active' ? 'Plan Pro' : 'Inactif'}
-                                    </span>
+                {subscription ? (() => {
+                    const { status, cancel_at_period_end, trial_end, current_period_end } = subscription;
+                    const isTrial = status === 'trialing';
+                    const isActive = status === 'active';
+                    const isCanceled = cancel_at_period_end;
+
+                    const displayDate = isTrial ? trial_end : current_period_end;
+                    const dateFormatted = displayDate ? new Date(displayDate).toLocaleDateString('fr-FR', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                    }) : '—';
+
+                    let statusText = "Statut Inconnu";
+                    let statusColor = "bg-gray-500";
+                    let description = "";
+
+                    if (isTrial) {
+                        statusText = isCanceled ? "Essai (Annulation Planifiée)" : "Essai Gratuit";
+                        statusColor = isCanceled ? "bg-orange-500" : "bg-green-500";
+                        description = isCanceled ? `Se termine le ${dateFormatted}` : `S'achève le ${dateFormatted}`;
+                    } else if (isActive) {
+                        statusText = isCanceled ? "Annulation Planifiée" : "Abonnement Actif";
+                        statusColor = isCanceled ? "bg-orange-500" : "bg-green-500";
+                        description = isCanceled ? `Accès conservé jusqu'au ${dateFormatted}` : `Prochaine échéance : ${dateFormatted}`;
+                    } else {
+                        statusText = status.toUpperCase();
+                        statusColor = "bg-red-500";
+                        description = "Votre abonnement nécessite votre attention.";
+                    }
+
+                    return (
+                        <div className="space-y-6">
+                            <div className="flex items-center justify-between p-6 bg-gray-50 rounded-2xl border border-gray-200">
+                                <div className="space-y-1">
+                                    <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Votre Offre</p>
+                                    <div className="flex items-center gap-2">
+                                        <span className={`w-3 h-3 rounded-full ${statusColor} animate-pulse`}></span>
+                                        <span className="text-xl font-black uppercase tracking-tight text-gray-900">
+                                            {statusText}
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-gray-600 font-medium">
+                                        {description}
+                                    </p>
                                 </div>
-                                <p className="text-xs text-gray-400 mt-2">
-                                    {subscription.status === 'trialing' ? 'Votre essai se termine le : ' : 'Prochain prélèvement le : '}
-                                    <span className="font-bold">{new Date(subscription.current_period_end).toLocaleDateString()}</span>
+                                <Zap className={`w-10 h-10 ${isActive || isTrial ? 'text-yellow-400' : 'text-gray-300'}`} />
+                            </div>
+
+                            <div className="flex flex-col gap-4">
+                                <button
+                                    disabled={subLoading}
+                                    className="w-full bg-gray-900 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-black transition-all disabled:opacity-50"
+                                    onClick={handlePortal}
+                                >
+                                    {subLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <CreditCard className="w-5 h-5" />}
+                                    GÉRER MON ABONNEMENT & FACTURES
+                                </button>
+
+                                <p className="text-center text-[11px] text-gray-400 font-medium leading-relaxed italic px-4">
+                                    Vous allez être redirigé vers le portail sécurisé de Stripe pour modifier votre carte bancaire ou annuler votre abonnement.
                                 </p>
                             </div>
-                            <Zap className="w-10 h-10 text-yellow-400" />
-                        </div>
 
-                        <button
-                            disabled={subLoading}
-                            className="text-sm font-bold text-gray-500 hover:text-[#1d1dd7] transition-colors uppercase tracking-widest underline decoration-2 underline-offset-4 disabled:opacity-50"
-                            onClick={handlePortal}
-                        >
-                            {subLoading ? 'Chargement...' : 'Gérer mon abonnement (Factures, CB...)'}
-                        </button>
-
-                        <div className="pt-4 border-t border-gray-100 flex justify-between items-center">
-                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                                Identifiant Stripe : {subscription.stripe_customer_id}
-                            </p>
-                            <button
-                                onClick={handleReset}
-                                className="text-[10px] text-red-400 font-bold uppercase tracking-widest hover:text-red-600 transition-colors"
-                            >
-                                [ DEBUG RESET ABONNEMENT ]
-                            </button>
+                            <div className="pt-4 border-t border-gray-100 flex justify-between items-center">
+                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                                    ID Client : {subscription.stripe_customer_id}
+                                </p>
+                                <button
+                                    onClick={handleReset}
+                                    className="text-[10px] text-red-300 font-bold uppercase tracking-widest hover:text-red-600 transition-colors"
+                                >
+                                    [ DEBUG RESET DB ONLY ]
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                ) : (
+                    );
+                })() : (
                     <div className="space-y-8">
                         <div className="bg-gradient-to-br from-[#1d1dd7] to-[#4f46e5] p-8 rounded-2xl text-white relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
