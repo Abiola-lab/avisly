@@ -63,6 +63,8 @@ export async function POST(req: Request) {
 
     } catch (error: any) {
         console.error('Stripe Checkout Error:', error);
-        return NextResponse.json({ error: 'Erreur lors de la création de la session de paiement' }, { status: 500 });
+        return NextResponse.json({
+            error: error.message || 'Erreur lors de la création de la session de paiement'
+        }, { status: 500 });
     }
 }

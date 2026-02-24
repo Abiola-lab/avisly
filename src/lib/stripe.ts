@@ -5,9 +5,9 @@ if (!process.env.STRIPE_SECRET_KEY) {
 }
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: '2025-01-27-ac', // Use the latest stable version or current one
+    // Let Stripe use the default SDK version or configured account version
     appInfo: {
-        name: 'Revio SaaS',
+        name: 'Avisly SaaS',
         version: '0.1.0',
     },
 });
