@@ -33,11 +33,19 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Restaurant non trouvé' }, { status: 404 });
         }
 
-        // 4. Create Stripe Checkout Session
+        // 4. Check for existing subscription/customer
+        const { data: existingSub } = await supabase
+            .from('subscriptions')
+            .select('stripe_customer_id')
+            .eq('restaurant_id', restaurant.id)
+            .single();
+
+        // 5. Create Stripe Checkout Session
         const session = await stripe.checkout.sessions.create({
             mode: 'subscription',
             payment_method_types: ['card'],
-            customer_email: user.email,
+            customer: existingSub?.stripe_customer_id || undefined,
+            customer_email: existingSub?.stripe_customer_id ? undefined : user.email,
             line_items: [
                 {
                     price: priceId,
@@ -51,8 +59,9 @@ export async function POST(req: Request) {
                     userId: user.id
                 }
             },
-            success_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/dashboard/settings?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/dashboard/settings`,
+            allow_promotion_codes: true,
+            success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/settings?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/settings`,
             metadata: {
                 restaurantId: restaurant.id,
                 userId: user.id

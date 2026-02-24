@@ -79,6 +79,38 @@ export default function SettingsPage() {
         }
     }
 
+    const handlePortal = async () => {
+        setSubLoading(true)
+        try {
+            const res = await fetch('/api/stripe/portal', { method: 'POST' })
+            const { url, error } = await res.json()
+            if (error) throw new Error(error)
+            window.location.href = url
+        } catch (err: any) {
+            setStatus({ type: 'error', message: err.message })
+        } finally {
+            setSubLoading(false)
+        }
+    }
+
+    const handleReset = async () => {
+        if (!confirm('DEBUG : Voulez-vous vraiment supprimer votre abonnement en base Supabase ? Cela ne l\'annulera pas dans Stripe.')) return
+        setSubLoading(true)
+        try {
+            const res = await fetch('/api/stripe/reset', { method: 'POST' })
+            const { success, error } = await res.json()
+            if (error) throw new Error(error)
+            if (success) {
+                setStatus({ type: 'success', message: 'Abonnement réinitialisé ! Rechargez la page.' })
+                window.location.reload()
+            }
+        } catch (err: any) {
+            setStatus({ type: 'error', message: err.message })
+        } finally {
+            setSubLoading(false)
+        }
+    }
+
     const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (!file) return
@@ -305,11 +337,24 @@ export default function SettingsPage() {
                         </div>
 
                         <button
-                            className="text-sm font-bold text-gray-500 hover:text-gray-900 transition-colors uppercase tracking-widest underline decoration-2 underline-offset-4"
-                            onClick={() => window.open('https://billing.stripe.com/p/login/test_YOUR_PORTAL_LINK')}
+                            disabled={subLoading}
+                            className="text-sm font-bold text-gray-500 hover:text-[#1d1dd7] transition-colors uppercase tracking-widest underline decoration-2 underline-offset-4 disabled:opacity-50"
+                            onClick={handlePortal}
                         >
-                            Accéder au portail de facturation Stripe
+                            {subLoading ? 'Chargement...' : 'Gérer mon abonnement (Factures, CB...)'}
                         </button>
+
+                        <div className="pt-4 border-t border-gray-100 flex justify-between items-center">
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                                Identifiant Stripe : {subscription.stripe_customer_id}
+                            </p>
+                            <button
+                                onClick={handleReset}
+                                className="text-[10px] text-red-400 font-bold uppercase tracking-widest hover:text-red-600 transition-colors"
+                            >
+                                [ DEBUG RESET ABONNEMENT ]
+                            </button>
+                        </div>
                     </div>
                 ) : (
                     <div className="space-y-8">
