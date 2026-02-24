@@ -55,7 +55,8 @@ export async function POST(req: Request) {
                         cancel_at_period_end: subscription.cancel_at_period_end,
                         current_period_end: safeStripeDate(subscription.current_period_end),
                         trial_end: safeStripeDate(subscription.trial_end),
-                        canceled_at: safeStripeDate(subscription.canceled_at)
+                        canceled_at: safeStripeDate(subscription.canceled_at),
+                        cancel_at: safeStripeDate(subscription.cancel_at)
                     });
 
                     if (error) {
@@ -76,7 +77,8 @@ export async function POST(req: Request) {
                     cancel_at_period_end: subscription.cancel_at_period_end,
                     current_period_end: safeStripeDate(subscription.current_period_end),
                     trial_end: safeStripeDate(subscription.trial_end),
-                    canceled_at: safeStripeDate(subscription.canceled_at)
+                    canceled_at: safeStripeDate(subscription.canceled_at),
+                    cancel_at: safeStripeDate(subscription.cancel_at)
                 })
                     .eq('stripe_subscription_id', subscription.id);
 
