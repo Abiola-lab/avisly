@@ -7,6 +7,16 @@ export async function POST() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
 
+        // --- PROTECTION ADMIN ---
+        const debugEnabled = process.env.DEBUG_TOOLS_ENABLED === 'true';
+        const adminEmail = process.env.ADMIN_EMAIL;
+
+        if (!debugEnabled || user.email !== adminEmail) {
+            console.warn(`🔒 Tentative d'accès non autorisée au Simulate Expired par ${user.email}`);
+            return NextResponse.json({ error: 'Accès interdit' }, { status: 403 });
+        }
+        // ------------------------
+
         const { data: restaurant } = await supabase
             .from('restaurants')
             .select('id')

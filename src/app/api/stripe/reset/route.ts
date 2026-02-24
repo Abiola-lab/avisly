@@ -15,6 +15,16 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
         }
 
+        // --- PROTECTION ADMIN ---
+        const debugEnabled = process.env.DEBUG_TOOLS_ENABLED === 'true';
+        const adminEmail = process.env.ADMIN_EMAIL;
+
+        if (!debugEnabled || user.email !== adminEmail) {
+            console.warn(`🔒 Tentative d'accès non autorisée au Reset DB par ${user.email}`);
+            return NextResponse.json({ error: 'Accès interdit' }, { status: 403 });
+        }
+        // ------------------------
+
         // Get restaurant
         const { data: restaurant } = await supabase
             .from('restaurants')

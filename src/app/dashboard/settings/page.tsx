@@ -18,6 +18,7 @@ export default function SettingsPage() {
     const [subLoading, setSubLoading] = useState(false)
     const [subscription, setSubscription] = useState<any>(null)
     const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null)
+    const [canDebug, setCanDebug] = useState(false)
 
     const supabase = createClient()
 
@@ -57,6 +58,16 @@ export default function SettingsPage() {
 
                 setSubscription(sub)
             }
+
+            // Check if admin can debug
+            try {
+                const debugRes = await fetch('/api/admin/check-debug')
+                const { canDebug } = await debugRes.json()
+                setCanDebug(canDebug)
+            } catch (err) {
+                setCanDebug(false)
+            }
+
             setLoading(false)
         }
 
@@ -421,31 +432,33 @@ export default function SettingsPage() {
                                 </p>
                             </div>
 
-                            <div className="pt-4 border-t border-gray-100 flex flex-col gap-3">
-                                <div className="flex justify-between items-center gap-4">
-                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                                        ID Client : {subscription.stripe_customer_id}
-                                    </p>
-                                    <div className="flex gap-4">
-                                        <button
-                                            onClick={handleTrialEndDebug}
-                                            className="text-[10px] text-orange-200 font-bold uppercase tracking-widest hover:text-orange-500 transition-colors"
-                                        >
-                                            [ SIMULATE EXPIRED ]
-                                        </button>
-                                        <button
-                                            onClick={handleReset}
-                                            className="text-[10px] text-red-200 font-bold uppercase tracking-widest hover:text-red-500 transition-colors"
-                                        >
-                                            [ RESET DB DEBUG ]
-                                        </button>
+                            {canDebug && (
+                                <div className="pt-4 border-t border-gray-100 flex flex-col gap-3">
+                                    <div className="flex justify-between items-center gap-4">
+                                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                                            ID Client : {subscription.stripe_customer_id}
+                                        </p>
+                                        <div className="flex gap-4">
+                                            <button
+                                                onClick={handleTrialEndDebug}
+                                                className="text-[10px] text-orange-200 font-bold uppercase tracking-widest hover:text-orange-500 transition-colors"
+                                            >
+                                                [ SIMULATE EXPIRED ]
+                                            </button>
+                                            <button
+                                                onClick={handleReset}
+                                                className="text-[10px] text-red-200 font-bold uppercase tracking-widest hover:text-red-500 transition-colors"
+                                            >
+                                                [ RESET DB DEBUG ]
+                                            </button>
+                                        </div>
                                     </div>
+                                    <p className="text-[9px] text-gray-300 italic text-right leading-none">
+                                        Attention : Le reset supprime uniquement l'entrée en base de données Avisly. <br />
+                                        L'abonnement Stripe RESTE ACTIF côté Stripe.
+                                    </p>
                                 </div>
-                                <p className="text-[9px] text-gray-300 italic text-right leading-none">
-                                    Attention : Le reset supprime uniquement l'entrée en base de données Avisly. <br />
-                                    L'abonnement Stripe RESTE ACTIF côté Stripe.
-                                </p>
-                            </div>
+                            )}
                         </div>
                     );
                 })() : (
