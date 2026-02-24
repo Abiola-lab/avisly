@@ -114,6 +114,24 @@ export default function SettingsPage() {
         }
     }
 
+    const handleTrialEndDebug = async () => {
+        if (!confirm('DEBUG : Voulez-vous simuler la FIN de votre essai ? L\'accès aux pages premium sera bloqué.')) return
+        setSubLoading(true)
+        try {
+            const res = await fetch('/api/stripe/trial-end-debug', { method: 'POST' })
+            const { success, error } = await res.json()
+            if (error) throw new Error(error)
+            if (success) {
+                setStatus({ type: 'success', message: 'Essai expiré (simulé) !' })
+                window.location.reload()
+            }
+        } catch (err: any) {
+            setStatus({ type: 'error', message: err.message })
+        } finally {
+            setSubLoading(false)
+        }
+    }
+
     const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (!file) return
@@ -404,16 +422,24 @@ export default function SettingsPage() {
                             </div>
 
                             <div className="pt-4 border-t border-gray-100 flex flex-col gap-3">
-                                <div className="flex justify-between items-center">
+                                <div className="flex justify-between items-center gap-4">
                                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
                                         ID Client : {subscription.stripe_customer_id}
                                     </p>
-                                    <button
-                                        onClick={handleReset}
-                                        className="text-[10px] text-red-200 font-bold uppercase tracking-widest hover:text-red-500 transition-colors"
-                                    >
-                                        [ RESET DB DEBUG ]
-                                    </button>
+                                    <div className="flex gap-4">
+                                        <button
+                                            onClick={handleTrialEndDebug}
+                                            className="text-[10px] text-orange-200 font-bold uppercase tracking-widest hover:text-orange-500 transition-colors"
+                                        >
+                                            [ SIMULATE EXPIRED ]
+                                        </button>
+                                        <button
+                                            onClick={handleReset}
+                                            className="text-[10px] text-red-200 font-bold uppercase tracking-widest hover:text-red-500 transition-colors"
+                                        >
+                                            [ RESET DB DEBUG ]
+                                        </button>
+                                    </div>
                                 </div>
                                 <p className="text-[9px] text-gray-300 italic text-right leading-none">
                                     Attention : Le reset supprime uniquement l'entrée en base de données Avisly. <br />

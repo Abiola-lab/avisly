@@ -22,10 +22,10 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
         }
 
-        // 3. Get restaurant ID
+        // 3. Get restaurant ID and existing Stripe customer reference
         const { data: restaurant } = await supabase
             .from('restaurants')
-            .select('id, name')
+            .select('id, name, stripe_customer_id')
             .eq('user_id', user.id)
             .single();
 
@@ -33,19 +33,12 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Restaurant non trouvé' }, { status: 404 });
         }
 
-        // 4. Check for existing subscription/customer
-        const { data: existingSub } = await supabase
-            .from('subscriptions')
-            .select('stripe_customer_id')
-            .eq('restaurant_id', restaurant.id)
-            .single();
-
-        // 5. Create Stripe Checkout Session
+        // 4. Create Stripe Checkout Session
         const session = await stripe.checkout.sessions.create({
             mode: 'subscription',
             payment_method_types: ['card'],
-            customer: existingSub?.stripe_customer_id || undefined,
-            customer_email: existingSub?.stripe_customer_id ? undefined : user.email,
+            customer: restaurant.stripe_customer_id || undefined,
+            customer_email: restaurant.stripe_customer_id ? undefined : user.email,
             line_items: [
                 {
                     price: priceId,

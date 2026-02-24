@@ -1,6 +1,7 @@
 import Sidebar from '@/components/dashboard/Sidebar'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import SubscriptionGuard from '@/components/dashboard/SubscriptionGuard'
 
 export default async function DashboardLayout({
     children,
@@ -30,7 +31,9 @@ export default async function DashboardLayout({
             <Sidebar />
             <main className="flex-1 ml-64 p-8">
                 <div className="max-w-6xl mx-auto">
-                    {children}
+                    <SubscriptionGuard>
+                        {children}
+                    </SubscriptionGuard>
                 </div>
             </main>
         </div>

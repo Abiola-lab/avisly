@@ -39,12 +39,19 @@ export async function POST(req: Request) {
                     const subscriptionId = session.subscription as string;
                     const subscription = await stripe.subscriptions.retrieve(subscriptionId) as any;
                     const restaurantId = session.metadata?.restaurantId;
+
                     if (!restaurantId) {
-                        console.error('❌ No restaurantId found in session metadata');
+                        console.error(`❌ No restaurantId found for session ${session.id} [${event.id}]`);
                         return NextResponse.json({ error: 'restaurantId missing in metadata' }, { status: 400 });
                     }
 
-                    console.log(`✅ Checkout completed for restaurant: ${restaurantId}`);
+                    // Save customer ID to restaurant for future checkouts (idempotency)
+                    await supabaseAdmin
+                        .from('restaurants')
+                        .update({ stripe_customer_id: session.customer as string })
+                        .eq('id', restaurantId);
+
+                    console.log(`✅ Checkout completed for restaurant: ${restaurantId} (Event: ${event.id})`);
 
                     const { error } = await supabaseAdmin.from('subscriptions').upsert({
                         restaurant_id: restaurantId,

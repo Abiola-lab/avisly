@@ -14,7 +14,7 @@ export async function POST(req: Request) {
         // 1. Get restaurant
         const { data: restaurant } = await supabase
             .from('restaurants')
-            .select('id')
+            .select('id, stripe_customer_id')
             .eq('user_id', user.id)
             .single();
 
@@ -22,14 +22,19 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Restaurant non trouvé' }, { status: 404 });
         }
 
-        // 2. Get stripe_customer_id from subscriptions
-        const { data: sub } = await supabase
-            .from('subscriptions')
-            .select('stripe_customer_id')
-            .eq('restaurant_id', restaurant.id)
-            .single();
+        // 2. Get stripe_customer_id (try restaurant first, then subscriptions)
+        let stripeCustomerId = restaurant.stripe_customer_id;
 
-        if (!sub?.stripe_customer_id) {
+        if (!stripeCustomerId) {
+            const { data: sub } = await supabase
+                .from('subscriptions')
+                .select('stripe_customer_id')
+                .eq('restaurant_id', restaurant.id)
+                .single();
+            stripeCustomerId = sub?.stripe_customer_id;
+        }
+
+        if (!stripeCustomerId) {
             return NextResponse.json({ error: "Pas de client Stripe trouvé. Veuillez d'abord souscrire à une offre." }, { status: 400 });
         }
 
@@ -40,7 +45,7 @@ export async function POST(req: Request) {
 
         // 3. Create portal session
         const portalSession = await stripe.billingPortal.sessions.create({
-            customer: sub.stripe_customer_id,
+            customer: stripeCustomerId,
             return_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/settings?stripe=return`,
         });
 
