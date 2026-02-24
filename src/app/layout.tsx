@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
@@ -10,8 +10,6 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Avisly | Boostez vos avis Google par le jeu",
   description: "Avisly transforme vos clients en ambassadeurs. Utilisez la gamification (roue de la fortune) pour récolter plus d'avis Google et améliorer votre SEO local.",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
-  themeColor: "#1d1dd7",
   icons: {
     icon: "/logo_avisly.svg",
     apple: "/logo_avisly.svg",
@@ -24,6 +22,13 @@ export const metadata: Metadata = {
     locale: "fr_FR",
     type: "website",
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: "#1d1dd7",
 };
 
 export default function RootLayout({

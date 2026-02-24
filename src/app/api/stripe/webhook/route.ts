@@ -33,7 +33,7 @@ export async function POST(req: Request) {
             case 'checkout.session.completed':
                 if (session.mode === 'subscription') {
                     const subscriptionId = session.subscription as string;
-                    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+                    const subscription = await stripe.subscriptions.retrieve(subscriptionId) as any;
                     const restaurantId = session.metadata?.restaurantId;
 
                     await supabaseAdmin.from('subscriptions').upsert({
@@ -41,8 +41,10 @@ export async function POST(req: Request) {
                         stripe_customer_id: session.customer as string,
                         stripe_subscription_id: subscriptionId,
                         status: subscription.status,
-                        plan_id: (subscription as any).items.data[0].price.id,
-                        current_period_end: new Date((subscription as any).current_period_end * 1000).toISOString()
+                        plan_id: subscription.items.data[0].price.id,
+                        current_period_end: subscription.current_period_end
+                            ? new Date(subscription.current_period_end * 1000).toISOString()
+                            : new Date().toISOString()
                     });
                 }
                 break;
@@ -53,7 +55,9 @@ export async function POST(req: Request) {
 
                 await supabaseAdmin.from('subscriptions').update({
                     status: subscription.status,
-                    current_period_end: new Date(subscription.current_period_end * 1000).toISOString()
+                    current_period_end: subscription.current_period_end
+                        ? new Date(subscription.current_period_end * 1000).toISOString()
+                        : new Date().toISOString()
                 })
                     .eq('stripe_subscription_id', subscription.id);
                 break;
