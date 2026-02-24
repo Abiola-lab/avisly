@@ -64,7 +64,7 @@ export async function POST(req: Request) {
                         trial_end: safeStripeDate(subscription.trial_end),
                         canceled_at: safeStripeDate(subscription.canceled_at),
                         cancel_at: safeStripeDate(subscription.cancel_at)
-                    });
+                    }, { onConflict: 'restaurant_id' });
 
                     if (error) {
                         console.error('❌ Error updating subscription in Supabase:', error);

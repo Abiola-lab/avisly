@@ -33,7 +33,16 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Restaurant non trouvé' }, { status: 404 });
         }
 
-        // 4. Create Stripe Checkout Session
+        // 4. Check if they already had a trial/subscription record
+        const { data: existingSub } = await supabase
+            .from('subscriptions')
+            .select('id')
+            .eq('restaurant_id', restaurant.id)
+            .maybeSingle();
+
+        const hasHadTrial = !!existingSub;
+
+        // 5. Create Stripe Checkout Session
         const session = await stripe.checkout.sessions.create({
             mode: 'subscription',
             payment_method_types: ['card'],
@@ -46,7 +55,7 @@ export async function POST(req: Request) {
                 },
             ],
             subscription_data: {
-                trial_period_days: 7,
+                trial_period_days: hasHadTrial ? undefined : 7,
                 metadata: {
                     restaurantId: restaurant.id,
                     userId: user.id
