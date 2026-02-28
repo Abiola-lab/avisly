@@ -208,13 +208,13 @@ export default function SettingsPage() {
     if (loading) return <div className="p-8 text-center text-gray-500 font-medium">Chargement des paramètres...</div>
 
     return (
-        <div className="space-y-8 max-w-2xl">
+        <div className="space-y-6 md:space-y-8 max-w-2xl">
             <div>
-                <h1 className="text-2xl font-bold text-gray-900">Paramètres de l'établissement</h1>
-                <p className="text-gray-500 font-medium">Modifiez les informations de votre restaurant et votre lien Google.</p>
+                <h1 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">Paramètres de l'établissement</h1>
+                <p className="text-gray-500 font-medium text-sm md:text-base">Modifiez les informations de votre restaurant et votre lien Google.</p>
             </div>
 
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+            <div className="bg-white p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] shadow-sm border border-gray-100">
                 <form onSubmit={handleSave} className="space-y-6">
                     <div className="space-y-4">
                         <div>
@@ -290,7 +290,7 @@ export default function SettingsPage() {
 
                         <div>
                             <label className="block text-sm font-bold text-gray-700 mb-2">Logo de l'établissement</label>
-                            <div className="flex items-center gap-6 p-6 bg-gray-50 rounded-2xl border border-gray-200">
+                            <div className="flex flex-col md:flex-row items-center gap-6 p-6 bg-gray-50 rounded-2xl border border-gray-200">
                                 <div className="w-20 h-20 bg-white rounded-2xl border border-gray-200 flex items-center justify-center overflow-hidden shadow-sm shrink-0">
                                     {logoUrl ? (
                                         <img src={logoUrl} alt="Logo preview" className="w-full h-full object-contain p-2" />
@@ -298,8 +298,8 @@ export default function SettingsPage() {
                                         <ImageIcon className="w-8 h-8 text-gray-300" />
                                     )}
                                 </div>
-                                <div className="flex-1 space-y-2">
-                                    <label className="inline-flex items-center gap-2 bg-white border border-gray-200 px-4 py-2 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 cursor-pointer shadow-sm transition-all">
+                                <div className="flex-1 space-y-3 text-center md:text-left w-full">
+                                    <label className="inline-flex items-center justify-center gap-2 bg-white border border-gray-200 px-6 py-2.5 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 cursor-pointer shadow-sm transition-all w-full md:w-auto">
                                         <Upload className="w-4 h-4" />
                                         {uploading ? 'Chargement...' : 'Choisir un fichier'}
                                         <input

@@ -294,25 +294,27 @@ export default function CampaignsPage() {
     if (loading) return <div className="p-8 text-center text-gray-500 font-medium">Récupération de votre campagne...</div>
 
     return (
-        <div className="space-y-8 max-w-4xl">
-            <div className="flex items-center justify-between">
+        <div className="space-y-6 md:space-y-8 max-w-4xl">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Vos Modèles de Roue</h1>
-                    <p className="text-gray-500 font-medium">Créez des configurations de lots et basculez en un clic.</p>
+                    <h1 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">Vos Modèles de Roue</h1>
+                    <p className="text-gray-500 font-medium text-sm md:text-base">Créez des configurations de lots et basculez en un clic.</p>
                 </div>
-                <button
-                    onClick={() => setShowNewModel(!showNewModel)}
-                    className="flex items-center gap-2 bg-[#f0f0ff] text-[#1d1dd7] px-6 py-2.5 rounded-xl font-bold hover:bg-[#e0e0ff] transition-all"
-                >
-                    <Plus className="w-5 h-5" /> Nouveau modèle
-                </button>
-                <button
-                    onClick={deactivateAllCampaigns}
-                    disabled={saving}
-                    className="flex items-center gap-2 bg-red-50 text-red-600 px-6 py-2.5 rounded-xl font-bold hover:bg-red-100 transition-all disabled:opacity-50"
-                >
-                    Tout désactiver
-                </button>
+                <div className="flex flex-wrap gap-3">
+                    <button
+                        onClick={() => setShowNewModel(!showNewModel)}
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-[#f0f0ff] text-[#1d1dd7] px-6 py-2.5 rounded-xl font-bold hover:bg-[#e0e0ff] transition-all text-sm whitespace-nowrap"
+                    >
+                        <Plus className="w-5 h-5" /> Nouveau modèle
+                    </button>
+                    <button
+                        onClick={deactivateAllCampaigns}
+                        disabled={saving}
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-red-50 text-red-600 px-6 py-2.5 rounded-xl font-bold hover:bg-red-100 transition-all disabled:opacity-50 text-sm whitespace-nowrap"
+                    >
+                        Tout désactiver
+                    </button>
+                </div>
             </div>
 
             {showNewModel && (
@@ -461,42 +463,46 @@ export default function CampaignsPage() {
                         </DragDropContext>
 
                         <form onSubmit={handleAddReward} className="mt-8 space-y-6">
-                            <div className="flex flex-wrap gap-4 items-end">
-                                <div className="flex-1 min-w-[200px]">
+                            <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-end">
+                                <div className="flex-1">
                                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Libellé du lot (facultatif)</label>
                                     <input
                                         type="text"
                                         placeholder="ex: Un café offert"
-                                        className="w-full px-5 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1d1dd7] focus:border-transparent outline-none transition-all font-bold placeholder-gray-500 text-gray-900"
+                                        className="w-full px-5 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1d1dd7] focus:border-transparent outline-none transition-all font-bold placeholder-gray-500 text-gray-900 h-12"
                                         value={newRewardLabel}
                                         onChange={(e) => setNewRewardLabel(e.target.value)}
                                     />
                                 </div>
-                                <div>
-                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Couleur</label>
+                                <div className="flex gap-4">
+                                    <div className="flex-1 sm:flex-none">
+                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Couleur</label>
+                                        <input
+                                            type="color"
+                                            className="w-full sm:w-16 h-12 p-1 bg-white border border-gray-300 rounded-xl cursor-pointer"
+                                            value={newRewardColor}
+                                            onChange={(e) => setNewRewardColor(e.target.value)}
+                                        />
+                                    </div>
+                                    <button
+                                        disabled={saving}
+                                        type="submit"
+                                        className="flex-1 sm:flex-none bg-[#1d1dd7] text-white px-8 py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#1515a3] transition-all disabled:opacity-50 shadow-lg shadow-[#1d1dd7]/20 h-12 whitespace-nowrap"
+                                    >
+                                        {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
+                                        Ajouter
+                                    </button>
+                                </div>
+                            </div>
+                            <label className="flex items-center gap-3 cursor-pointer group w-fit">
+                                <div className="relative flex items-center">
                                     <input
-                                        type="color"
-                                        className="w-16 h-12 p-1 bg-white border border-gray-300 rounded-xl cursor-pointer"
-                                        value={newRewardColor}
-                                        onChange={(e) => setNewRewardColor(e.target.value)}
+                                        type="checkbox"
+                                        checked={isPrize}
+                                        onChange={(e) => setIsPrize(e.target.checked)}
+                                        className="w-5 h-5 rounded border-gray-300 text-[#1d1dd7] focus:ring-[#1d1dd7]"
                                     />
                                 </div>
-                                <button
-                                    disabled={saving}
-                                    type="submit"
-                                    className="bg-[#1d1dd7] text-white px-8 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-[#1515a3] transition-all disabled:opacity-50 shadow-lg shadow-[#1d1dd7]/20 h-12"
-                                >
-                                    {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
-                                    Ajouter
-                                </button>
-                            </div>
-                            <label className="flex items-center gap-2 cursor-pointer group w-fit">
-                                <input
-                                    type="checkbox"
-                                    checked={isPrize}
-                                    onChange={(e) => setIsPrize(e.target.checked)}
-                                    className="w-4 h-4 rounded border-gray-300 text-[#1d1dd7] focus:ring-[#1d1dd7]"
-                                />
                                 <span className="text-sm font-bold text-gray-500 group-hover:text-gray-700 transition-colors">
                                     C&apos;est un cadeau à gagner (Génère un coupon)
                                 </span>
@@ -517,16 +523,16 @@ export default function CampaignsPage() {
                 <div className="space-y-6">
                     <div className="bg-gray-900 p-8 rounded-[2.5rem] shadow-xl text-white space-y-6">
                         <div className="space-y-4">
-                            <div className="flex justify-between items-center">
-                                <h4 className="text-xl font-black uppercase tracking-tight">Probabilité Globale</h4>
-                                <span className="text-2xl font-black text-[#1d1dd7]">{campaign?.win_probability || 50}%</span>
+                            <div className="flex justify-between items-center gap-4">
+                                <h4 className="text-lg md:text-xl font-black uppercase tracking-tight">Probabilité Globale</h4>
+                                <span className="text-xl md:text-2xl font-black text-[#1d1dd7]">{campaign?.win_probability || 50}%</span>
                             </div>
                             <input
                                 type="range"
                                 min="50"
                                 max="100"
                                 step="1"
-                                className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-[#1d1dd7]"
+                                className="w-full h-3 md:h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-[#1d1dd7]"
                                 value={campaign?.win_probability || 50}
                                 onChange={(e) => updateCampaignProbability(parseInt(e.target.value))}
                             />

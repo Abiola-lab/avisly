@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   QrCode,
   HandMetal,
@@ -19,11 +20,14 @@ import {
   MessageSquare,
   Gift,
   Clock,
-  Printer
+  Printer,
+  Menu,
+  X
 } from 'lucide-react'
 
 export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   const faqs = [
     {
@@ -59,28 +63,89 @@ export default function LandingPage() {
             </div>
             <span className="text-2xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">Avisly</span>
           </Link>
+
+          {/* Desktop Nav */}
           <div className="hidden lg:flex items-center gap-10">
             <Link href="#features" className="text-[10px] font-black text-gray-600 hover:text-[#1d1dd7] transition-colors uppercase tracking-[0.2em]">Fonctionnalités</Link>
             <Link href="#how-it-works" className="text-[10px] font-black text-gray-600 hover:text-[#1d1dd7] transition-colors uppercase tracking-[0.2em]">Comment ça marche</Link>
             <Link href="#pricing" className="text-[10px] font-black text-gray-600 hover:text-[#1d1dd7] transition-colors uppercase tracking-[0.2em]">Tarifs</Link>
             <Link href="#faq" className="text-[10px] font-black text-gray-600 hover:text-[#1d1dd7] transition-colors uppercase tracking-[0.2em]">FAQ</Link>
           </div>
-          <div className="flex items-center gap-8">
-            <Link href="/login" className="hidden md:block text-sm font-black text-gray-500 hover:text-[#1d1dd7] transition-colors uppercase tracking-widest">
+
+          <div className="flex items-center gap-4 md:gap-8">
+            <Link href="/login" className="hidden sm:block text-sm font-black text-gray-500 hover:text-[#1d1dd7] transition-colors uppercase tracking-widest whitespace-nowrap">
               Connexion
             </Link>
             <Link
               href="/register"
-              className="px-8 py-3 bg-[#1d1dd7] text-white text-sm font-black rounded-2xl hover:bg-[#1515a3] transition-all shadow-xl shadow-[#1d1dd7]/20 active:scale-95 uppercase tracking-widest"
+              className="px-6 md:px-8 py-3 bg-[#1d1dd7] text-white text-[10px] sm:text-sm font-black rounded-2xl hover:bg-[#1515a3] transition-all shadow-xl shadow-[#1d1dd7]/20 active:scale-95 uppercase tracking-widest whitespace-nowrap"
             >
               Je commence
             </Link>
+            <button
+              className="lg:hidden p-2 text-gray-900"
+              onClick={() => setIsMenuOpen(true)}
+            >
+              <Menu className="w-6 h-6" />
+            </button>
           </div>
         </div>
       </nav>
 
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, x: '100%' }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="fixed inset-0 bg-white z-[60] flex flex-col p-8 overflow-y-auto"
+          >
+            <div className="flex items-center justify-between mb-12">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg border border-gray-100">
+                  <img src="/logo_avisly.svg" alt="Avisly Logo" className="w-[85%] h-[85%] object-contain" />
+                </div>
+                <span className="text-2xl font-black tracking-tight">Avisly</span>
+              </div>
+              <button
+                onClick={() => setIsMenuOpen(false)}
+                className="p-2 text-gray-900"
+              >
+                <X className="w-8 h-8" />
+              </button>
+            </div>
+
+            <nav className="flex flex-col gap-8 mb-12">
+              <Link onClick={() => setIsMenuOpen(false)} href="#features" className="text-4xl font-black text-gray-900 tracking-tighter italic">Features</Link>
+              <Link onClick={() => setIsMenuOpen(false)} href="#how-it-works" className="text-4xl font-black text-gray-900 tracking-tighter italic">Process</Link>
+              <Link onClick={() => setIsMenuOpen(false)} href="#pricing" className="text-4xl font-black text-gray-900 tracking-tighter italic">Pricing</Link>
+              <Link onClick={() => setIsMenuOpen(false)} href="#faq" className="text-4xl font-black text-gray-900 tracking-tighter italic">FAQ</Link>
+            </nav>
+
+            <div className="flex flex-col gap-4 mt-auto">
+              <Link
+                onClick={() => setIsMenuOpen(false)}
+                href="/login"
+                className="w-full py-6 text-center text-lg font-black text-gray-900 bg-gray-50 rounded-3xl"
+              >
+                CONNEXION
+              </Link>
+              <Link
+                onClick={() => setIsMenuOpen(false)}
+                href="/register"
+                className="w-full py-6 text-center text-lg font-black text-white bg-[#1d1dd7] rounded-3xl shadow-xl shadow-[#1d1dd7]/20"
+              >
+                JE COMMENCE
+              </Link>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Hero Section */}
-      <section className="relative pt-48 pb-32 px-6 overflow-hidden">
+      <section className="relative pt-40 md:pt-48 pb-20 md:pb-32 px-6 overflow-hidden">
         {/* Background blobs for premium effect */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] pointer-events-none">
           <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-[#1d1dd7]/5 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2" />
@@ -88,27 +153,27 @@ export default function LandingPage() {
         </div>
 
         <div className="max-w-5xl mx-auto text-center relative z-10 flex flex-col items-center">
-          <div className="space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-            <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#f0f0ff] rounded-full text-[#1d1dd7] text-xs font-black uppercase tracking-[0.1em] border border-[#1d1dd7]/10 mx-auto">
+          <div className="space-y-8 md:space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#f0f0ff] rounded-full text-[#1d1dd7] text-[10px] md:text-xs font-black uppercase tracking-[0.1em] border border-[#1d1dd7]/10 mx-auto">
               <TrendingUp className="w-4 h-4" /> La nouvelle référence pour vos avis Google
             </div>
 
-            <h1 className="text-7xl md:text-9xl font-black leading-[0.9] tracking-tighter sm:whitespace-pre-line">
-              Dopez votre {"\n"}
+            <h1 className="text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-black leading-[0.95] md:leading-[0.9] tracking-tighter">
+              Dopez votre <br className="hidden sm:block" />
               <span className="text-[#1d1dd7] italic">SEO Local</span> par le jeu.
             </h1>
 
-            <p className="text-xl md:text-2xl text-gray-500 font-medium max-w-2xl mx-auto leading-relaxed">
+            <p className="text-lg md:text-2xl text-gray-500 font-medium max-w-2xl mx-auto leading-relaxed px-4">
               Ne demandez plus d'avis, <span className="text-gray-900 font-bold">offrez une expérience</span>.
               Le premier SaaS qui transforme vos clients en ambassadeurs grâce à la gamification.
             </p>
 
-            <div className="flex flex-col items-center gap-8 pt-4">
+            <div className="flex flex-col items-center gap-6 md:gap-8 pt-4 w-full">
               <Link
                 href="/register"
-                className="px-16 py-8 bg-gray-900 text-white font-black rounded-[2.5rem] text-2xl flex items-center justify-center gap-4 hover:bg-black transition-all shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] hover:scale-[1.05] active:scale-95 group"
+                className="w-full sm:w-auto px-10 md:px-16 py-6 md:py-8 bg-gray-900 text-white font-black rounded-[2.5rem] text-xl md:text-2xl flex items-center justify-center gap-4 hover:bg-black transition-all shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] active:scale-95 group"
               >
-                C'EST PARTI <ArrowRight className="w-8 h-8 group-hover:translate-x-2 transition-transform" />
+                C'EST PARTI <ArrowRight className="w-6 h-6 md:w-8 md:h-8 group-hover:translate-x-2 transition-transform" />
               </Link>
 
               <div className="flex flex-col items-center gap-3">
@@ -181,25 +246,25 @@ export default function LandingPage() {
                 ))}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-6 pt-12">
-                <div className="bg-[#1d1dd7] p-8 rounded-[2.5rem] shadow-xl text-white transform hover:-translate-y-2 transition-transform">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="space-y-6 pt-0 sm:pt-12">
+                <div className="bg-[#1d1dd7] p-8 rounded-[2rem] sm:rounded-[2.5rem] shadow-xl text-white transform hover:-translate-y-2 transition-transform">
                   <Star className="w-10 h-10 mb-4 fill-white" />
-                  <p className="text-3xl font-black italic">"Incontournable"</p>
+                  <p className="text-2xl sm:text-3xl font-black italic">"Incontournable"</p>
                 </div>
-                <div className="bg-white p-8 rounded-[2.5rem] shadow-lg border border-gray-100 transform hover:-translate-y-2 transition-transform">
+                <div className="bg-white p-8 rounded-[2rem] sm:rounded-[2.5rem] shadow-lg border border-gray-100 transform hover:-translate-y-2 transition-transform">
                   <p className="text-sm font-bold text-gray-400 mb-4 uppercase tracking-widest italic">Le Petit Bistro</p>
                   <p className="text-lg font-bold leading-tight">"+45 avis en seulement une semaine de test."</p>
                 </div>
               </div>
               <div className="space-y-6">
-                <div className="bg-white p-8 rounded-[2.5rem] shadow-lg border border-gray-100 transform hover:-translate-y-2 transition-transform">
+                <div className="bg-white p-8 rounded-[2rem] sm:rounded-[2.5rem] shadow-lg border border-gray-100 transform hover:-translate-y-2 transition-transform">
                   <TrendingUp className="w-8 h-8 text-[#1d1dd7] mb-4" />
                   <p className="text-lg font-bold leading-tight">"Notre position sur Maps a bondi de la 12ème à la 2ème place."</p>
                 </div>
-                <div className="bg-gray-900 p-8 rounded-[2.5rem] shadow-xl text-white transform hover:-translate-y-2 transition-transform">
+                <div className="bg-gray-900 p-8 rounded-[2rem] sm:rounded-[2.5rem] shadow-xl text-white transform hover:-translate-y-2 transition-transform">
                   <Users className="w-8 h-8 text-[#1d1dd7] mb-4" />
-                  <p className="text-lg font-black leading-tight">REJOIGNEZ LE MOUVEMENT.</p>
+                  <p className="text-lg font-black leading-tight uppercase">Rejoignez le mouvement.</p>
                 </div>
               </div>
             </div>
@@ -208,14 +273,14 @@ export default function LandingPage() {
       </section>
 
       {/* Steps (Refined) */}
-      <section id="how-it-works" className="py-40 bg-white">
+      <section id="how-it-works" className="py-20 md:py-40 bg-white">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center max-w-2xl mx-auto mb-24 space-y-4">
-            <h2 className="text-5xl font-black tracking-tight">Le flow client parfait ⚡️</h2>
+          <div className="text-center max-w-2xl mx-auto mb-16 md:mb-24 space-y-4">
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight">Le flow client parfait ⚡️</h2>
             <p className="text-gray-500 font-medium text-lg">Trois étapes, zéro friction, un avis mémorable.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-16">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-16">
             {[
               {
                 title: 'Scan Immédiat',
@@ -237,15 +302,15 @@ export default function LandingPage() {
               }
             ].map((item, i) => (
               <div key={i} className="relative group">
-                <div className="mb-10 relative">
-                  <div className={`w-20 h-20 bg-gray-50 rounded-3xl flex items-center justify-center text-[#1d1dd7] shadow-sm transform group-hover:rotate-6 group-hover:scale-110 transition-all duration-300 relative z-10`}>
-                    <item.icon className="w-10 h-10" />
+                <div className="mb-8 md:mb-10 relative">
+                  <div className={`w-16 h-16 md:w-20 md:h-20 bg-gray-50 rounded-2xl md:rounded-3xl flex items-center justify-center text-[#1d1dd7] shadow-sm transform group-hover:rotate-6 group-hover:scale-110 transition-all duration-300 relative z-10`}>
+                    <item.icon className="w-8 h-8 md:w-10 md:h-10" />
                   </div>
-                  <div className="absolute top-4 left-4 w-20 h-20 bg-[#1d1dd7]/10 rounded-3xl -z-0 group-hover:rotate-12 transition-transform" />
+                  <div className="absolute top-3 left-3 md:top-4 md:left-4 w-16 h-16 md:w-20 md:h-20 bg-[#1d1dd7]/10 rounded-2xl md:rounded-3xl -z-0 group-hover:rotate-12 transition-transform" />
                 </div>
-                <div className="text-6xl font-black text-gray-50 absolute -top-8 -right-4 pointer-events-none">{i + 1}</div>
-                <h3 className="text-2xl font-black mb-4">{item.title}</h3>
-                <p className="text-gray-500 font-medium leading-relaxed">{item.desc}</p>
+                <div className="text-5xl md:text-6xl font-black text-gray-50 absolute -top-8 -right-4 pointer-events-none">{i + 1}</div>
+                <h3 className="text-xl md:text-2xl font-black mb-4">{item.title}</h3>
+                <p className="text-sm md:text-base text-gray-500 font-medium leading-relaxed">{item.desc}</p>
               </div>
             ))}
           </div>
@@ -253,46 +318,41 @@ export default function LandingPage() {
       </section>
 
       {/* Studio Print Section (NEW) */}
-      <section className="py-40 bg-white overflow-hidden">
+      <section className="py-20 md:py-40 bg-white overflow-hidden">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="bg-gray-900 rounded-[4rem] p-12 md:p-24 relative overflow-hidden group">
+          <div className="bg-gray-900 rounded-[2.5rem] md:rounded-[4rem] p-10 md:p-24 relative overflow-hidden group text-center lg:text-left">
             <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#1d1dd7]/10 rounded-full blur-[120px] translate-x-1/2 -translate-y-1/2" />
-            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-              <div className="space-y-10">
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full text-white/80 text-xs font-black uppercase tracking-widest border border-white/10">
+            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-16 md:gap-20 items-center">
+              <div className="space-y-8 md:space-y-10">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full text-white/80 text-[10px] sm:text-xs font-black uppercase tracking-widest border border-white/10 mx-auto lg:mx-0">
                   <Printer className="w-4 h-4 text-[#1d1dd7]" /> Studio Print Intégré
                 </div>
-                <h2 className="text-5xl md:text-7xl font-black text-white leading-tight tracking-tighter italic">
+                <h2 className="text-4xl md:text-7xl font-black text-white leading-tight tracking-tighter italic">
                   Économisez <br /> <span className="text-[#1d1dd7] italic">votre graphisme.</span>
                 </h2>
-                <p className="text-white/50 text-xl font-medium leading-relaxed max-w-lg">
+                <p className="text-white/50 text-lg md:text-xl font-medium leading-relaxed max-w-lg mx-auto lg:mx-0">
                   Pourquoi payer un prestataire ou passer des heures sur Canva ? <span className="text-white">Générez vos stickers, chevalets et affiches en 1 clic.</span> Tout est prêt à être imprimé.
                 </p>
-                <div className="flex flex-wrap gap-4 pt-4">
+                <div className="flex flex-wrap justify-center lg:justify-start gap-3 md:gap-4 pt-4">
                   {['Format Chevalet', 'Stickers Caisses', 'Affiches A4', 'Supports DIY'].map(tag => (
-                    <div key={tag} className="px-6 py-3 bg-white/5 rounded-2xl border border-white/10 text-white/40 text-[10px] font-black uppercase tracking-widest group-hover:border-[#1d1dd7]/30 transition-colors">
+                    <div key={tag} className="px-5 py-2.5 bg-white/5 rounded-xl border border-white/10 text-white/40 text-[9px] sm:text-[10px] font-black uppercase tracking-widest group-hover:border-[#1d1dd7]/30 transition-colors">
                       {tag}
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="relative animate-in fade-in slide-in-from-right-8 duration-1000">
+              <div className="relative animate-in fade-in slide-in-from-right-8 duration-1000 hidden sm:block">
                 <div className="absolute inset-0 bg-gradient-to-tr from-[#1d1dd7]/40 to-transparent blur-[80px] rounded-full" />
-                <div className="relative bg-white/5 backdrop-blur-3xl border border-white/10 p-4 rounded-[3.5rem] shadow-3xl rotate-2 hover:rotate-0 transition-transform duration-700">
-                  <div className="bg-white/10 rounded-[3rem] aspect-[4/3] flex items-center justify-center p-12">
-                    <div className="flex flex-col items-center gap-6 text-center">
-                      <div className="w-24 h-24 bg-white rounded-3xl flex items-center justify-center shadow-2xl">
-                        <Printer className="w-12 h-12 text-gray-900" />
+                <div className="relative bg-white/5 backdrop-blur-3xl border border-white/10 p-4 rounded-[3.5rem] shadow-3xl rotate-2 hover:rotate-0 transition-transform duration-700 max-w-md mx-auto">
+                  <div className="bg-white/10 rounded-[3rem] aspect-[4/3] flex items-center justify-center p-8 md:p-12">
+                    <div className="flex flex-col items-center gap-4 md:gap-6 text-center">
+                      <div className="w-16 h-16 md:w-24 md:h-24 bg-white rounded-2xl md:rounded-3xl flex items-center justify-center shadow-2xl">
+                        <Printer className="w-8 h-8 md:w-12 md:h-12 text-gray-900" />
                       </div>
                       <div className="space-y-2">
-                        <div className="h-2 w-32 bg-white/20 rounded-full" />
-                        <div className="h-2 w-24 bg-white/10 rounded-full mx-auto" />
-                      </div>
-                      <div className="mt-4 flex gap-2">
-                        <div className="w-12 h-16 bg-white/20 rounded-lg border border-white/10" />
-                        <div className="w-12 h-16 bg-white/20 rounded-lg border border-white/10" />
-                        <div className="w-12 h-16 bg-white/20 rounded-lg border border-white/10" />
+                        <div className="h-1.5 md:h-2 w-24 md:w-32 bg-white/20 rounded-full" />
+                        <div className="h-1.5 md:h-2 w-16 md:w-24 bg-white/10 rounded-full mx-auto" />
                       </div>
                     </div>
                   </div>
@@ -304,46 +364,46 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="py-40 px-6 bg-[#fafafa]">
+      <section id="pricing" className="py-20 md:py-40 px-6 bg-[#fafafa]">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center max-w-2xl mx-auto mb-20 space-y-4">
+          <div className="text-center max-w-2xl mx-auto mb-12 md:mb-20 space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-50 text-green-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-green-100">
               ⚡️ Offre de Lancement
             </div>
-            <h2 className="text-5xl md:text-6xl font-black tracking-tight leading-tight">
+            <h2 className="text-4xl md:text-6xl font-black tracking-tight leading-tight">
               Prenez de l'avance, <br /> commencez <span className="text-[#1d1dd7]">gratuitement.</span>
             </h2>
-            <p className="text-gray-500 font-medium text-lg">
+            <p className="text-gray-500 font-medium text-base md:text-lg">
               Testez toutes les fonctionnalités Pro pendant 7 jours. <br className="hidden md:block" /> Aucune limite pendant votre essai.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 max-w-5xl mx-auto items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 max-w-5xl mx-auto items-stretch">
             {/* Monthly Plan */}
-            <div className="p-12 bg-white rounded-[3.5rem] border border-gray-100 shadow-sm hover:shadow-2xl transition-all relative group h-full flex flex-col scale-95 hover:scale-[0.98]">
-              <div className="mb-10">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Mensuel</h3>
-                <p className="text-gray-400 text-sm font-medium italic">Flexibilité totale, pas d'engagement.</p>
+            <div className="p-8 md:p-12 bg-white rounded-[2.5rem] md:rounded-[3.5rem] border border-gray-100 shadow-sm hover:shadow-2xl transition-all relative group h-full flex flex-col md:scale-95 md:hover:scale-[0.98]">
+              <div className="mb-8 md:mb-10">
+                <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">Mensuel</h3>
+                <p className="text-gray-400 text-xs md:text-sm font-medium italic">Flexibilité totale, pas d'engagement.</p>
               </div>
 
               <div className="flex items-baseline gap-1 mb-6">
-                <span className="text-6xl font-black tracking-tighter">29,99€</span>
+                <span className="text-5xl md:text-6xl font-black tracking-tighter">29,99€</span>
                 <span className="text-gray-400 font-black tracking-widest uppercase text-[10px]">/ mois</span>
               </div>
 
-              <div className="p-4 bg-indigo-50/50 rounded-2xl mb-10 border border-indigo-100/50">
-                <p className="text-xs font-black text-[#1d1dd7] uppercase tracking-widest text-center">✨ 7 jours d'essai offerts</p>
+              <div className="p-4 bg-indigo-50/50 rounded-2xl mb-8 md:mb-10 border border-indigo-100/50">
+                <p className="text-[10px] md:text-xs font-black text-[#1d1dd7] uppercase tracking-widest text-center">✨ 7 jours d'essai offerts</p>
               </div>
 
-              <ul className="space-y-5 mb-12 flex-1">
+              <ul className="space-y-4 md:space-y-5 mb-10 md:mb-12 flex-1">
                 {[
                   'Campagnes illimitées',
                   'Fiches QR Personnalisées',
                   'Filtre Bad-Buzz intégré',
                   'Support réactif',
                 ].map((feature, i) => (
-                  <li key={i} className="flex items-center gap-4 text-sm font-bold text-gray-500">
-                    <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
+                  <li key={i} className="flex items-center gap-3 md:gap-4 text-xs md:text-sm font-bold text-gray-500">
+                    <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-green-500 shrink-0" />
                     {feature}
                   </li>
                 ))}
@@ -351,43 +411,43 @@ export default function LandingPage() {
 
               <Link
                 href="/register"
-                className="block w-full py-6 bg-gray-900 text-white text-center font-black rounded-3xl hover:bg-black transition-all hover:shadow-xl shadow-gray-200 active:scale-95 uppercase tracking-widest text-sm"
+                className="block w-full py-5 md:py-6 bg-gray-900 text-white text-center font-black rounded-[1.5rem] md:rounded-3xl hover:bg-black transition-all hover:shadow-xl shadow-gray-200 active:scale-95 uppercase tracking-widest text-xs md:text-sm"
               >
                 DÉMARRER MON ESSAI
               </Link>
             </div>
 
             {/* Annual Plan */}
-            <div className="p-12 bg-white rounded-[3.5rem] border-4 border-[#1d1dd7] shadow-[0_32px_64px_-16px_rgba(29,29,215,0.2)] relative group h-full flex flex-col">
-              <div className="absolute top-6 right-8">
-                <div className="bg-yellow-400 text-gray-900 text-[10px] font-black py-2.5 px-6 rounded-full uppercase tracking-widest shadow-xl -rotate-2">
+            <div className="p-8 md:p-12 bg-white rounded-[2.5rem] md:rounded-[3.5rem] border-4 border-[#1d1dd7] shadow-[0_32px_64px_-16px_rgba(29,29,215,0.2)] relative group h-full flex flex-col">
+              <div className="absolute top-4 right-4 md:top-6 md:right-8">
+                <div className="bg-yellow-400 text-gray-900 text-[8px] md:text-[10px] font-black py-2 px-4 md:px-6 rounded-full uppercase tracking-widest shadow-xl -rotate-2">
                   -15% DE RÉDUCTION
                 </div>
               </div>
 
-              <div className="mb-10">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Annuel</h3>
-                <p className="text-[#1d1dd7] text-sm font-black uppercase tracking-widest">Le choix des leaders 👑</p>
+              <div className="mb-8 md:mb-10">
+                <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">Annuel</h3>
+                <p className="text-[#1d1dd7] text-xs md:text-sm font-black uppercase tracking-widest">Le choix des leaders 👑</p>
               </div>
 
               <div className="flex items-baseline gap-1 mb-6">
-                <span className="text-6xl font-black tracking-tighter">299,99€</span>
+                <span className="text-5xl md:text-6xl font-black tracking-tighter">299,99€</span>
                 <span className="text-gray-400 font-black tracking-widest uppercase text-[10px]">/ an</span>
               </div>
 
-              <div className="p-4 bg-green-50 rounded-2xl mb-10 border border-green-100">
-                <p className="text-xs font-black text-green-600 uppercase tracking-widest text-center">🔥 7 jours d'essai + 2 mois offerts</p>
+              <div className="p-4 bg-green-50 rounded-2xl mb-8 md:mb-10 border border-green-100">
+                <p className="text-[10px] md:text-xs font-black text-green-600 uppercase tracking-widest text-center">🔥 7 jours d'essai + 2 mois offerts</p>
               </div>
 
-              <ul className="space-y-5 mb-12 flex-1">
+              <ul className="space-y-4 md:space-y-5 mb-10 md:mb-12 flex-1">
                 {[
                   'Toutes les fonctionnalités Pro',
                   'Économisez 60€ par an',
                   'Accès Premium Dashboard',
                   'Conseil SEO inclus (1 call)'
                 ].map((feature, i) => (
-                  <li key={i} className="flex items-center gap-4 text-sm font-black text-gray-800">
-                    <Zap className="w-5 h-5 text-yellow-500 shrink-0" />
+                  <li key={i} className="flex items-center gap-3 md:gap-4 text-xs md:text-sm font-black text-gray-800">
+                    <Zap className="w-4 h-4 md:w-5 md:h-5 text-yellow-500 shrink-0" />
                     {feature}
                   </li>
                 ))}
@@ -395,7 +455,7 @@ export default function LandingPage() {
 
               <Link
                 href="/register"
-                className="block w-full py-6 bg-[#1d1dd7] text-white text-center font-black rounded-3xl hover:bg-[#1515a3] transition-all shadow-2xl shadow-[#1d1dd7]/40 active:scale-95 uppercase tracking-widest text-sm"
+                className="block w-full py-5 md:py-6 bg-[#1d1dd7] text-white text-center font-black rounded-[1.5rem] md:rounded-3xl hover:bg-[#1515a3] transition-all shadow-2xl shadow-[#1d1dd7]/40 active:scale-95 uppercase tracking-widest text-xs md:text-sm"
               >
                 S'ABONNER MAINTENANT
               </Link>
@@ -405,29 +465,29 @@ export default function LandingPage() {
       </section>
 
       {/* FAQ Section */}
-      <section id="faq" className="py-40 px-6 bg-white overflow-hidden relative">
+      <section id="faq" className="py-20 md:py-40 px-6 bg-white overflow-hidden relative">
         <div className="max-w-4xl mx-auto relative z-10">
-          <div className="text-center mb-24 space-y-4">
+          <div className="text-center mb-16 md:mb-24 space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-gray-100 text-gray-500 text-[10px] font-black uppercase tracking-widest rounded-full border border-gray-200">
               <HelpCircle className="w-3 h-3" /> Questions Fréquentes
             </div>
-            <h2 className="text-5xl font-black tracking-tighter">On répond à <span className="text-[#1d1dd7]">tout.</span></h2>
+            <h2 className="text-4xl md:text-5xl font-black tracking-tighter">On répond à <span className="text-[#1d1dd7]">tout.</span></h2>
           </div>
 
           <div className="space-y-4">
             {faqs.map((faq, i) => (
-              <div key={i} className="bg-gray-50 rounded-[2rem] overflow-hidden border border-gray-100 hover:border-[#1d1dd7]/30 transition-colors">
+              <div key={i} className="bg-gray-50 rounded-[1.5rem] md:rounded-[2rem] overflow-hidden border border-gray-100 hover:border-[#1d1dd7]/30 transition-colors">
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full p-8 text-left flex items-center justify-between group"
+                  className="w-full p-6 md:p-8 text-left flex items-center justify-between group"
                 >
-                  <span className="text-lg font-black tracking-tight transition-colors group-hover:text-[#1d1dd7]">{faq.q}</span>
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-sm transition-transform duration-300 ${openFaq === i ? 'rotate-180 bg-[#1d1dd7] text-white' : 'group-hover:bg-gray-100'}`}>
-                    <ChevronDown className="w-5 h-5" />
+                  <span className="text-base md:text-lg font-black tracking-tight transition-colors group-hover:text-[#1d1dd7] pr-4">{faq.q}</span>
+                  <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center bg-white shadow-sm transition-transform duration-300 shrink-0 ${openFaq === i ? 'rotate-180 bg-[#1d1dd7] text-white' : 'group-hover:bg-gray-100'}`}>
+                    <ChevronDown className="w-4 h-4 md:w-5 md:h-5" />
                   </div>
                 </button>
                 <div className={`transition-all duration-300 ease-in-out ${openFaq === i ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'} overflow-hidden`}>
-                  <div className="px-8 pb-8 text-gray-500 font-medium leading-relaxed">
+                  <div className="px-6 md:px-8 pb-6 md:pb-8 text-sm md:text-base text-gray-500 font-medium leading-relaxed">
                     {faq.a}
                   </div>
                 </div>
@@ -438,31 +498,31 @@ export default function LandingPage() {
       </section>
 
       {/* Final CTA */}
-      <section className="py-40 px-6">
-        <div className="max-w-6xl mx-auto bg-gray-900 rounded-[5rem] p-12 md:p-32 text-center text-white relative overflow-hidden group">
+      <section className="py-20 md:py-40 px-6">
+        <div className="max-w-6xl mx-auto bg-gray-900 rounded-[2.5rem] md:rounded-[5rem] p-10 md:p-32 text-center text-white relative overflow-hidden group">
           <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-[#1d1dd7]/20 rounded-full blur-[120px] translate-x-1/2 translate-y-1/2" />
           <div className="absolute top-0 left-0 w-96 h-96 bg-white/5 rounded-full blur-3xl -ml-48 -mt-48 group-hover:scale-125 transition-transform duration-1000" />
 
-          <div className="relative z-10 space-y-12">
-            <h2 className="text-5xl md:text-7xl font-black leading-tight tracking-tighter italic">
+          <div className="relative z-10 space-y-8 md:space-y-12">
+            <h2 className="text-4xl md:text-7xl font-black leading-tight tracking-tighter italic">
               Prêt pour une pluie <br className="hidden md:block" /> d'avis 5 étoiles ? ⭐️
             </h2>
-            <p className="text-white/60 text-xl font-medium max-w-2xl mx-auto leading-relaxed uppercase tracking-widest text-sm">
+            <p className="text-white/60 text-lg md:text-xl font-medium max-w-2xl mx-auto leading-relaxed uppercase tracking-widest text-[10px] md:text-sm px-4">
               Rejoignez les restaurants les plus influents de votre secteur. <br /> Installation gratuite, résultats garantis.
             </p>
-            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center pt-6">
+            <div className="flex flex-col sm:flex-row gap-4 md:gap-6 justify-center items-center pt-4 md:pt-6 w-full">
               <Link
                 href="/register"
-                className="px-14 py-7 bg-[#1d1dd7] text-white font-black rounded-3xl text-xl hover:bg-[#1515a3] transition-all shadow-2xl shadow-[#1d1dd7]/20 active:scale-95 uppercase tracking-widest"
+                className="w-full sm:w-auto px-10 md:px-14 py-6 md:py-7 bg-[#1d1dd7] text-white font-black rounded-[1.5rem] md:rounded-3xl text-lg md:text-xl hover:bg-[#1515a3] transition-all shadow-2xl shadow-[#1d1dd7]/20 active:scale-95 uppercase tracking-widest"
               >
                 DÉMARRER MON ESSAI
               </Link>
             </div>
-            <div className="flex items-center justify-center gap-6 text-white/30 text-xs font-black uppercase tracking-[0.2em]">
+            <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 text-white/30 text-[8px] md:text-xs font-black uppercase tracking-[0.2em]">
               <span>✓ SANS ENGAGEMENT</span>
-              <span className="w-1.5 h-1.5 bg-white/20 rounded-full" />
+              <span className="hidden sm:inline w-1.5 h-1.5 bg-white/20 rounded-full" />
               <span>✓ 7 JOURS OFFERTS</span>
-              <span className="w-1.5 h-1.5 bg-white/20 rounded-full" />
+              <span className="hidden sm:inline w-1.5 h-1.5 bg-white/20 rounded-full" />
               <span>✓ SUPPORT 24/7</span>
             </div>
           </div>

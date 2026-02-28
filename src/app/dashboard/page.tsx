@@ -176,31 +176,31 @@ export default function DashboardPage() {
     )
 
     return (
-        <div className="space-y-8">
-            <div className="flex items-center justify-between">
+        <div className="space-y-6 md:space-y-8">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-black text-gray-900 tracking-tight">Bonjour, {restaurant?.name || 'Restaurateur'} 👋</h1>
-                    <p className="text-gray-500 font-medium">Voici les performances de votre établissement en temps réel.</p>
+                    <h1 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">Bonjour, {restaurant?.name || 'Restaurateur'} 👋</h1>
+                    <p className="text-gray-500 font-medium text-sm md:text-base">Voici les performances de votre établissement en temps réel.</p>
                 </div>
-                <div className="bg-[#f0f0ff] text-[#1d1dd7] px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2">
+                <div className="self-start md:self-auto bg-[#f0f0ff] text-[#1d1dd7] px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2">
                     <TrendingUp className="w-4 h-4" /> LIVE
                 </div>
             </div>
 
             {/* Empty State / Call to Action if no stats yet */}
             {stats[0]?.value === '0' && stats[1]?.value === '0' && (
-                <div className="bg-gradient-to-br from-indigo-600 to-[#1d1dd7] p-12 rounded-[3.5rem] text-white relative overflow-hidden group">
+                <div className="bg-gradient-to-br from-indigo-600 to-[#1d1dd7] p-8 md:p-12 rounded-[2.5rem] md:rounded-[3.5rem] text-white relative overflow-hidden group">
                     <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -mr-48 -mt-48 group-hover:scale-110 transition-transform duration-700" />
                     <div className="relative z-10 space-y-6 max-w-2xl">
                         <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/10">✨ Premiers pas</div>
-                        <h2 className="text-4xl font-black tracking-tight leading-tight italic">Prêt à faire décoller <br /> vos avis Google ?</h2>
-                        <p className="text-white/70 font-medium text-lg italic">
+                        <h2 className="text-3xl md:text-4xl font-black tracking-tight leading-tight italic">Prêt à faire décoller <br /> vos avis Google ?</h2>
+                        <p className="text-white/70 font-medium text-base md:text-lg italic">
                             Lancez votre première campagne "Roue de la Fortune" et commencez à récolter des avis 5 étoiles en un clin d'œil.
                         </p>
-                        <div className="pt-4">
+                        <div className="pt-2 md:pt-4">
                             <button
                                 onClick={() => window.location.href = '/dashboard/campaigns'}
-                                className="px-10 py-5 bg-white text-[#1d1dd7] font-black rounded-2xl hover:bg-gray-100 transition-all shadow-xl active:scale-95 uppercase tracking-widest text-sm"
+                                className="w-full sm:w-auto px-10 py-5 bg-white text-[#1d1dd7] font-black rounded-2xl hover:bg-gray-100 transition-all shadow-xl active:scale-95 uppercase tracking-widest text-sm"
                             >
                                 CRÉER MA CAMPAGNE
                             </button>
@@ -254,54 +254,54 @@ export default function DashboardPage() {
                 </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-gray-100">
-                    <h2 className="text-xl font-bold text-gray-900 mb-8 flex items-center gap-3">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+                <div className="bg-white p-6 md:p-10 rounded-[2.5rem] md:rounded-[3rem] shadow-sm border border-gray-100">
+                    <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-6 md:mb-8 flex items-center gap-3">
                         <TrendingUp className="w-5 h-5 text-[#1d1dd7]" /> Volume de Scans (7j)
                     </h2>
-                    <div className="flex items-end justify-between h-48 gap-2">
+                    <div className="flex items-end justify-between h-32 md:h-48 gap-1 md:gap-2">
                         {dailyStats.map((day, i) => {
                             const maxScans = Math.max(...dailyStats.map(d => d.scans), 1)
                             const height = (day.scans / maxScans) * 100
                             return (
-                                <div key={i} className="flex-1 flex flex-col items-center gap-3 group">
+                                <div key={i} className="flex-1 flex flex-col items-center gap-2 md:gap-3 group">
                                     <div className="relative w-full flex justify-center">
                                         <div
-                                            className="w-full max-w-[24px] bg-[#f0f0ff] group-hover:bg-[#1d1dd7] transition-all rounded-t-lg relative"
+                                            className="w-full max-w-[16px] md:max-w-[24px] bg-[#f0f0ff] group-hover:bg-[#1d1dd7] transition-all rounded-t-lg relative"
                                             style={{ height: `${height}%`, minHeight: '4px' }}
                                         >
-                                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[8px] md:text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
                                                 {day.scans}
                                             </div>
                                         </div>
                                     </div>
-                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">{day.label}</span>
+                                    <span className="text-[8px] md:text-[10px] font-black text-gray-400 uppercase tracking-tighter">{day.label}</span>
                                 </div>
                             )
                         })}
                     </div>
                 </div>
 
-                <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-gray-100">
-                    <h2 className="text-xl font-bold text-gray-900 mb-8 flex items-center gap-3">
+                <div className="bg-white p-6 md:p-10 rounded-[2.5rem] md:rounded-[3rem] shadow-sm border border-gray-100">
+                    <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-6 md:mb-8 flex items-center gap-3">
                         <Star className="w-5 h-5 text-yellow-400" /> Satisfaction Moyenne (7j)
                     </h2>
-                    <div className="flex items-end justify-between h-48 gap-2">
+                    <div className="flex items-end justify-between h-32 md:h-48 gap-1 md:gap-2">
                         {dailyStats.map((day, i) => {
                             const height = (parseFloat(day.avg) / 5) * 100
                             return (
-                                <div key={i} className="flex-1 flex flex-col items-center gap-3 group">
+                                <div key={i} className="flex-1 flex flex-col items-center gap-2 md:gap-3 group">
                                     <div className="relative w-full flex justify-center">
                                         <div
-                                            className="w-full max-w-[24px] bg-yellow-50 group-hover:bg-yellow-400 transition-all rounded-t-lg relative"
+                                            className="w-full max-w-[16px] md:max-w-[24px] bg-yellow-50 group-hover:bg-yellow-400 transition-all rounded-t-lg relative"
                                             style={{ height: `${height}%`, minHeight: '4px' }}
                                         >
-                                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[8px] md:text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                                                 ★ {day.avg}
                                             </div>
                                         </div>
                                     </div>
-                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">{day.label}</span>
+                                    <span className="text-[8px] md:text-[10px] font-black text-gray-400 uppercase tracking-tighter">{day.label}</span>
                                 </div>
                             )
                         })}
@@ -309,68 +309,70 @@ export default function DashboardPage() {
                 </div>
             </div>
 
-            <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-gray-100 relative overflow-hidden">
+            <div className="bg-white p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] shadow-sm border border-gray-100 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-[#f0f0ff]/50 rounded-full blur-3xl -mr-32 -mt-32" />
                 <h2 className="text-xl font-bold text-gray-900 mb-6 relative">Analyse de conversion</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-                    <div className="text-center p-6 border-r border-gray-100">
-                        <p className="text-3xl font-black text-[#1d1dd7]">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-8 relative border md:border-0 border-gray-50 rounded-2xl overflow-hidden">
+                    <div className="text-center p-6 md:p-6 border-b md:border-b-0 md:border-r border-gray-100">
+                        <p className="text-2xl md:text-3xl font-black text-[#1d1dd7]">
                             {stats[0]?.value !== '0' ? Math.round((parseInt(stats[1]?.value) / parseInt(stats[0]?.value)) * 100) : 0}%
                         </p>
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-2">Engagement (Scan → Spin)</p>
+                        <p className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest mt-2">Engagement (Scan → Spin)</p>
                     </div>
-                    <div className="text-center p-6 border-r border-gray-100">
-                        <p className="text-3xl font-black text-[#1d1dd7]">
+                    <div className="text-center p-6 md:p-6 border-b md:border-b-0 md:border-r border-gray-100">
+                        <p className="text-2xl md:text-3xl font-black text-[#1d1dd7]">
                             {stats[1]?.value !== '0' ? Math.round((parseInt(stats[2]?.value) / parseInt(stats[1]?.value)) * 100) : 0}%
                         </p>
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-2">Rétention (Spin → Note)</p>
+                        <p className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest mt-2">Rétention (Spin → Note)</p>
                     </div>
-                    <div className="text-center p-6">
-                        <p className="text-3xl font-black text-[#1d1dd7]">
+                    <div className="text-center p-6 md:p-6">
+                        <p className="text-2xl md:text-3xl font-black text-[#1d1dd7]">
                             {stats[2]?.value !== '0' ? Math.round((parseInt(stats[4]?.value) / parseInt(stats[2]?.value)) * 100) : 0}%
                         </p>
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-2">Impact Google (Note → Clic)</p>
+                        <p className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest mt-2">Impact Google (Note → Clic)</p>
                     </div>
                 </div>
             </div>
 
-            <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-gray-100">
-                <h2 className="text-xl font-bold text-gray-900 mb-6 font-black uppercase tracking-tight">Derniers Coupons</h2>
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead>
-                            <tr className="text-left text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50">
-                                <th className="pb-4">Code</th>
-                                <th className="pb-4">Gain</th>
-                                <th className="pb-4">Date</th>
-                                <th className="pb-4 text-right">Statut</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-50">
-                            {recentCoupons.map((coupon) => (
-                                <tr key={coupon.id} className="group hover:bg-gray-50/50 transition-colors">
-                                    <td className="py-4 font-black text-[#1d1dd7]">{coupon.code}</td>
-                                    <td className="py-4 font-bold text-gray-700">{coupon.sessions?.rewards?.label}</td>
-                                    <td className="py-4 text-sm text-gray-500">{new Date(coupon.created_at).toLocaleDateString()}</td>
-                                    <td className="py-4 text-right">
-                                        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${coupon.status === 'used'
-                                            ? 'bg-green-50 text-green-600'
-                                            : coupon.status === 'expired'
-                                                ? 'bg-red-50 text-red-600'
-                                                : 'bg-blue-50 text-[#1d1dd7]'
-                                            }`}>
-                                            {coupon.status === 'used' ? 'Validé' : coupon.status === 'expired' ? 'Expiré' : 'Actif'}
-                                        </span>
-                                    </td>
+            <div className="bg-white p-6 md:p-10 rounded-[2.5rem] md:rounded-[3rem] shadow-sm border border-gray-100">
+                <h2 className="text-lg md:text-xl font-black text-gray-900 mb-6 uppercase tracking-tight">Derniers Coupons</h2>
+                <div className="overflow-x-auto -mx-2">
+                    <div className="inline-block min-w-full align-middle px-2">
+                        <table className="w-full">
+                            <thead>
+                                <tr className="text-left text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50">
+                                    <th className="pb-4 pr-4">Code</th>
+                                    <th className="pb-4 pr-4">Gain</th>
+                                    <th className="pb-4 pr-4">Date</th>
+                                    <th className="pb-4 text-right">Statut</th>
                                 </tr>
-                            ))}
-                            {recentCoupons.length === 0 && (
-                                <tr>
-                                    <td colSpan={4} className="py-10 text-center text-gray-400 italic">Aucun coupon généré pour le moment.</td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody className="divide-y divide-gray-50">
+                                {recentCoupons.map((coupon) => (
+                                    <tr key={coupon.id} className="group hover:bg-gray-50/50 transition-colors">
+                                        <td className="py-4 pr-4 font-black text-[#1d1dd7] text-sm md:text-base">{coupon.code}</td>
+                                        <td className="py-4 pr-4 font-bold text-gray-700 text-sm md:text-base truncate max-w-[120px] md:max-w-none">{coupon.sessions?.rewards?.label}</td>
+                                        <td className="py-4 pr-4 text-[10px] md:text-sm text-gray-500 whitespace-nowrap">{new Date(coupon.created_at).toLocaleDateString()}</td>
+                                        <td className="py-4 text-right">
+                                            <span className={`px-2 md:px-3 py-1 rounded-full text-[8px] md:text-[10px] font-black uppercase tracking-widest whitespace-nowrap ${coupon.status === 'used'
+                                                ? 'bg-green-50 text-green-600'
+                                                : coupon.status === 'expired'
+                                                    ? 'bg-red-50 text-red-600'
+                                                    : 'bg-blue-50 text-[#1d1dd7]'
+                                                }`}>
+                                                {coupon.status === 'used' ? 'Validé' : coupon.status === 'expired' ? 'Expiré' : 'Actif'}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {recentCoupons.length === 0 && (
+                                    <tr>
+                                        <td colSpan={4} className="py-10 text-center text-gray-400 italic text-sm">Aucun coupon généré pour le moment.</td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
