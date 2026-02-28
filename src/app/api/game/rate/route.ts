@@ -28,7 +28,7 @@ export async function POST(request: Request) {
         if (session.rewards?.is_prize) {
             const couponCode = Math.random().toString(36).substring(2, 8).toUpperCase()
             const expiresAt = new Date()
-            expiresAt.setMinutes(expiresAt.getMinutes() + 10) // 10 minutes par défaut
+            expiresAt.setHours(expiresAt.getHours() + 48) // 48 heures par défaut
 
             // 4. Create coupon in DB
             const { error: couponError } = await supabase

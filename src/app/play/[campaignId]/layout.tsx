@@ -14,34 +14,38 @@ export default function CampaignLayout({
     const supabase = createClient()
 
     useEffect(() => {
-        async function fetchColor() {
+        async function fetchColors() {
             if (!campaignId) return
             const { data } = await supabase
                 .from('campaigns')
-                .select('restaurants(primary_color)')
+                .select('color_primary, restaurants(primary_color)')
                 .eq('id', campaignId)
                 .single()
 
             const resData = data as any
-            if (resData?.restaurants?.primary_color) {
-                setPrimaryColor(resData.restaurants.primary_color)
-            }
+            const color = resData?.restaurants?.primary_color || resData?.color_primary || '#1d1dd7'
+            setPrimaryColor(color)
         }
-        fetchColor()
+        fetchColors()
     }, [campaignId])
 
     return (
         <div
-            className="min-h-[100dvh] text-white selection:bg-white/20 transition-colors duration-500"
-            style={{ backgroundColor: primaryColor }}
+            className="min-h-[100dvh] text-white selection:bg-white/20 transition-colors duration-500 overflow-x-hidden"
+            style={{
+                backgroundColor: '#0a0a0a',
+                backgroundImage: `radial-gradient(circle at 0% 0%, ${primaryColor}15 0%, transparent 50%), radial-gradient(circle at 100% 100%, ${primaryColor}10 0%, transparent 50%)`
+            }}
         >
             <div className="flex-1 w-full max-w-md mx-auto relative flex flex-col p-6 min-h-[100dvh]">
                 {children}
             </div>
-            {/* CSS Variable for children to use */}
             <style jsx global>{`
                 :root {
                     --primary-color: ${primaryColor};
+                }
+                body {
+                    background-color: #0a0a0a;
                 }
             `}</style>
         </div>

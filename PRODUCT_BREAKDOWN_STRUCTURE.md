@@ -81,7 +81,7 @@ Aucun champ texte (MVP).
 * Création d’un coupon avec :
 
   * status = unused
-  * expires_at = now + 10 minutes (configurable)
+  * expires_at = now + 48 hours (configurable)
 * Affichage timer visible côté client
 
 ---
@@ -145,7 +145,7 @@ Au moment du spin :
   * reward_id
   * code
   * status (unused)
-  * expires_at
+  * expires_at (now + 48h)
 
 ---
 
@@ -206,8 +206,9 @@ Création automatique première campagne.
 
 Contraintes :
 
-* Probabilités égales
 * Minimum 1 récompense requise
+* **Personnalisation segment** : Couleur de fond personnalisée par lot (picker color)
+* **Barre de probabilité** : Réglage d'un % de chance par lot (Somme = 100%)
 
 ---
 
@@ -216,8 +217,10 @@ Contraintes :
 * Génération QR unique par campagne
 * Téléchargement PNG
 * Copie lien direct
-
-(MVP : pas de génération PDF A4)
+* **Studio Print (Format A5)** :
+    * Choix entre Sticker (Carré) et Affiche (A5)
+    * Système de templates avec choix de 3 thèmes de couleurs
+    * Correction bug logo (affichage sur le preview et export)
 
 ---
 
@@ -304,4 +307,4 @@ Ce document est aligné avec :
 
 ---
 
-Version : 1.1 (Post-MVP Refinements)
+Version : 1.2 (Post-User Test Refinements)

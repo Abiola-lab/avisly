@@ -1,36 +1,55 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
     Plus,
     Trash2,
     Trophy,
-    Save,
     Loader2,
     AlertCircle,
-    CheckCircle2
+    CheckCircle2,
+    GripVertical
 } from 'lucide-react'
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
+
+interface Campaign {
+    id: string
+    name: string
+    is_active: boolean
+    created_at: string
+    restaurant_id: string
+    win_probability: number
+    color_primary: string
+    color_secondary: string
+    color_accent: string
+}
+
+interface Reward {
+    id: string
+    campaign_id: string
+    label: string
+    is_prize: boolean
+    color: string
+    created_at: string
+    order_index: number
+}
 
 export default function CampaignsPage() {
-    const [campaign, setCampaign] = useState<any>(null)
-    const [allCampaigns, setAllCampaigns] = useState<any[]>([])
-    const [rewards, setRewards] = useState<any[]>([])
+    const [campaign, setCampaign] = useState<Campaign | null>(null)
+    const [allCampaigns, setAllCampaigns] = useState<Campaign[]>([])
+    const [rewards, setRewards] = useState<Reward[]>([])
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [newRewardLabel, setNewRewardLabel] = useState('')
     const [isPrize, setIsPrize] = useState(true)
+    const [newRewardColor, setNewRewardColor] = useState('#1d1dd7')
     const [newCampaignName, setNewCampaignName] = useState('')
     const [showNewModel, setShowNewModel] = useState(false)
     const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null)
-
     const supabase = createClient()
 
-    useEffect(() => {
-        fetchData()
-    }, [])
-
-    async function fetchData() {
+    const fetchData = useCallback(async () => {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return
 
@@ -56,17 +75,22 @@ export default function CampaignsPage() {
                     .from('rewards')
                     .select('*')
                     .eq('campaign_id', active.id)
-                    .order('created_at', { ascending: true })
+                    .order('order_index', { ascending: true })
+                    .order('created_at', { ascending: true }) // Fallback sorting
 
                 setRewards(rewardsData || [])
             }
         }
         setLoading(false)
-    }
+    }, [supabase])
+
+    useEffect(() => {
+        fetchData()
+    }, [fetchData])
 
     const handleAddReward = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (!newRewardLabel || !campaign) return
+        if (!campaign) return
 
         setSaving(true)
         try {
@@ -75,19 +99,24 @@ export default function CampaignsPage() {
                 .insert([{
                     campaign_id: campaign.id,
                     label: newRewardLabel,
-                    is_prize: isPrize
+                    is_prize: isPrize,
+                    color: newRewardColor,
+                    order_index: rewards.length
                 }])
                 .select()
                 .single()
 
             if (error) throw error
 
-            setRewards([...rewards, data])
+            await fetchData()
             setNewRewardLabel('')
             setIsPrize(true)
             setStatus({ type: 'success', message: 'Récompense ajoutée !' })
-        } catch (err: any) {
-            setStatus({ type: 'error', message: err.message })
+        } catch (err: unknown) {
+            console.error('Error adding reward:', err)
+            const message = err instanceof Error ? err.message : 'Une erreur est survenue'
+            const details = (err as any)?.details || (err as any)?.message || ''
+            setStatus({ type: 'error', message: `${message} ${details}`.trim() })
         } finally {
             setSaving(false)
             setTimeout(() => setStatus(null), 3000)
@@ -101,8 +130,9 @@ export default function CampaignsPage() {
             const { error } = await supabase.from('rewards').delete().eq('id', id)
             if (error) throw error
             setRewards(rewards.filter(r => r.id !== id))
-        } catch (err: any) {
-            alert(err.message)
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Une erreur est survenue'
+            alert(message)
         }
     }
 
@@ -113,7 +143,7 @@ export default function CampaignsPage() {
             await supabase
                 .from('campaigns')
                 .update({ is_active: false })
-                .eq('restaurant_id', campaign.restaurant_id)
+                .eq('restaurant_id', campaign?.restaurant_id)
 
             // 2. Activate new one
             await supabase
@@ -123,8 +153,9 @@ export default function CampaignsPage() {
 
             await fetchData()
             setStatus({ type: 'success', message: 'Modèle activé !' })
-        } catch (err: any) {
-            alert(err.message)
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Une erreur est survenue'
+            alert(message)
         } finally {
             setSaving(false)
             setTimeout(() => setStatus(null), 3000)
@@ -144,7 +175,8 @@ export default function CampaignsPage() {
                 .insert([{
                     restaurant_id: rest!.id,
                     name: newCampaignName,
-                    is_active: false
+                    is_active: false,
+                    win_probability: 50
                 }])
                 .select()
                 .single()
@@ -155,8 +187,9 @@ export default function CampaignsPage() {
             await fetchData()
             setCampaign(data) // Focus on the new model
             setStatus({ type: 'success', message: 'Modèle créé !' })
-        } catch (err: any) {
-            alert(err.message)
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Une erreur est survenue'
+            alert(message)
         } finally {
             setSaving(false)
         }
@@ -174,8 +207,87 @@ export default function CampaignsPage() {
 
             if (error) throw error
             setCampaign({ ...campaign, is_active: newStatus })
-        } catch (err: any) {
-            alert(err.message)
+            await fetchData()
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Une erreur est survenue'
+            alert(message)
+        }
+    }
+
+    const updateCampaignProbability = async (prob: number) => {
+        if (!campaign) return
+        try {
+            const { error } = await supabase
+                .from('campaigns')
+                .update({ win_probability: prob })
+                .eq('id', campaign.id)
+
+            if (error) throw error
+            setCampaign({ ...campaign, win_probability: prob })
+            setAllCampaigns(allCampaigns.map(c => c.id === campaign.id ? { ...c, win_probability: prob } : c))
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Une erreur est survenue'
+            alert(message)
+        }
+    }
+
+    const deactivateAllCampaigns = async () => {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+
+        const { data: restaurant } = await supabase
+            .from('restaurants')
+            .select('id')
+            .eq('user_id', user.id)
+            .single()
+
+        if (!restaurant) return
+
+        setSaving(true)
+        try {
+            const { error } = await supabase
+                .from('campaigns')
+                .update({ is_active: false })
+                .eq('restaurant_id', restaurant.id)
+
+            if (error) throw error
+            await fetchData()
+            setStatus({ type: 'success', message: 'Toutes les campagnes sont désactivées' })
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Une erreur est survenue'
+            alert(message)
+        } finally {
+            setSaving(false)
+            setTimeout(() => setStatus(null), 3000)
+        }
+    }
+
+    const onDragEnd = async (result: any) => {
+        if (!result.destination) return
+
+        const items = Array.from(rewards)
+        const [reorderedItem] = items.splice(result.source.index, 1)
+        items.splice(result.destination.index, 0, reorderedItem)
+
+        // Optimistic UI update
+        const updatedItems = items.map((item, index) => ({
+            ...item,
+            order_index: index
+        }))
+        setRewards(updatedItems)
+
+        // Persist to DB
+        try {
+            const updates = updatedItems.map((item, index) =>
+                supabase
+                    .from('rewards')
+                    .update({ order_index: index })
+                    .eq('id', item.id)
+            )
+            await Promise.all(updates)
+        } catch (err: unknown) {
+            console.error('Error updating order:', err)
+            await fetchData() // Rollback on error
         }
     }
 
@@ -193,6 +305,13 @@ export default function CampaignsPage() {
                     className="flex items-center gap-2 bg-[#f0f0ff] text-[#1d1dd7] px-6 py-2.5 rounded-xl font-bold hover:bg-[#e0e0ff] transition-all"
                 >
                     <Plus className="w-5 h-5" /> Nouveau modèle
+                </button>
+                <button
+                    onClick={deactivateAllCampaigns}
+                    disabled={saving}
+                    className="flex items-center gap-2 bg-red-50 text-red-600 px-6 py-2.5 rounded-xl font-bold hover:bg-red-100 transition-all disabled:opacity-50"
+                >
+                    Tout désactiver
                 </button>
             </div>
 
@@ -287,45 +406,85 @@ export default function CampaignsPage() {
                             <Trophy className="w-5 h-5 text-[#1d1dd7]" /> Liste des récompenses
                         </h3>
 
-                        <div className="space-y-3">
-                            {rewards.length === 0 ? (
-                                <div className="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                                    <p className="text-gray-400 font-medium italic">Aucune récompense pour le moment.</p>
-                                </div>
-                            ) : (
-                                rewards.map((reward) => (
-                                    <div key={reward.id} className="group flex items-center justify-between p-4 bg-gray-50 hover:bg-white hover:shadow-md hover:border-gray-200 border border-transparent rounded-2xl transition-all">
-                                        <div className="flex items-center gap-3">
-                                            <span className="font-bold text-gray-700">{reward.label}</span>
-                                            {!reward.is_prize && (
-                                                <span className="bg-gray-200 text-gray-500 text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-tighter">FILLER / MERCI</span>
-                                            )}
-                                        </div>
-                                        <button
-                                            onClick={() => handleDeleteReward(reward.id)}
-                                            className="p-2 text-gray-400 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"
-                                        >
-                                            <Trash2 className="w-5 h-5" />
-                                        </button>
+                        <DragDropContext onDragEnd={onDragEnd}>
+                            <Droppable droppableId="rewards">
+                                {(provided) => (
+                                    <div
+                                        {...provided.droppableProps}
+                                        ref={provided.innerRef}
+                                        className="space-y-3"
+                                    >
+                                        {rewards.length === 0 ? (
+                                            <div className="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                                                <p className="text-gray-400 font-medium italic">Aucune récompense pour le moment.</p>
+                                            </div>
+                                        ) : (
+                                            rewards.map((reward, index) => (
+                                                <Draggable key={reward.id} draggableId={reward.id} index={index}>
+                                                    {(provided, snapshot) => (
+                                                        <div
+                                                            ref={provided.innerRef}
+                                                            {...provided.draggableProps}
+                                                            className={`group flex items-center justify-between p-4 bg-gray-50 hover:bg-white hover:shadow-md hover:border-gray-200 border border-transparent rounded-2xl transition-all ${snapshot.isDragging ? 'bg-white shadow-xl scale-[1.02] border-[#1d1dd7]/30 z-50' : ''
+                                                                }`}
+                                                        >
+                                                            <div className="flex items-center gap-3">
+                                                                <div
+                                                                    {...provided.dragHandleProps}
+                                                                    className="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500"
+                                                                >
+                                                                    <GripVertical className="w-5 h-5" />
+                                                                </div>
+                                                                <div className="w-4 h-4 rounded-full" style={{ backgroundColor: reward.color }} />
+                                                                <span className="font-bold text-gray-700">{reward.label || <span className="text-gray-300 font-normal italic">Sans texte</span>}</span>
+                                                                {reward.is_prize ? (
+                                                                    <span className="bg-green-100 text-green-700 text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-tighter">Prix</span>
+                                                                ) : (
+                                                                    <span className="bg-gray-200 text-gray-500 text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-tighter">Filler</span>
+                                                                )}
+                                                            </div>
+                                                            <button
+                                                                onClick={() => handleDeleteReward(reward.id)}
+                                                                className="p-2 text-gray-400 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"
+                                                            >
+                                                                <Trash2 className="w-5 h-5" />
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </Draggable>
+                                            ))
+                                        )}
+                                        {provided.placeholder}
                                     </div>
-                                ))
-                            )}
-                        </div>
+                                )}
+                            </Droppable>
+                        </DragDropContext>
 
-                        <form onSubmit={handleAddReward} className="mt-8 space-y-4">
-                            <div className="flex gap-3">
-                                <input
-                                    required
-                                    type="text"
-                                    placeholder="ex: Un café offert"
-                                    className="flex-1 px-5 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1d1dd7] focus:border-transparent outline-none transition-all font-bold placeholder-gray-500 text-gray-900"
-                                    value={newRewardLabel}
-                                    onChange={(e) => setNewRewardLabel(e.target.value)}
-                                />
+                        <form onSubmit={handleAddReward} className="mt-8 space-y-6">
+                            <div className="flex flex-wrap gap-4 items-end">
+                                <div className="flex-1 min-w-[200px]">
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Libellé du lot (facultatif)</label>
+                                    <input
+                                        type="text"
+                                        placeholder="ex: Un café offert"
+                                        className="w-full px-5 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1d1dd7] focus:border-transparent outline-none transition-all font-bold placeholder-gray-500 text-gray-900"
+                                        value={newRewardLabel}
+                                        onChange={(e) => setNewRewardLabel(e.target.value)}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Couleur</label>
+                                    <input
+                                        type="color"
+                                        className="w-16 h-12 p-1 bg-white border border-gray-300 rounded-xl cursor-pointer"
+                                        value={newRewardColor}
+                                        onChange={(e) => setNewRewardColor(e.target.value)}
+                                    />
+                                </div>
                                 <button
-                                    disabled={saving || !newRewardLabel}
+                                    disabled={saving}
                                     type="submit"
-                                    className="bg-[#1d1dd7] text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-[#1515a3] transition-all disabled:opacity-50 shadow-lg shadow-[#1d1dd7]/20"
+                                    className="bg-[#1d1dd7] text-white px-8 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-[#1515a3] transition-all disabled:opacity-50 shadow-lg shadow-[#1d1dd7]/20 h-12"
                                 >
                                     {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
                                     Ajouter
@@ -339,7 +498,7 @@ export default function CampaignsPage() {
                                     className="w-4 h-4 rounded border-gray-300 text-[#1d1dd7] focus:ring-[#1d1dd7]"
                                 />
                                 <span className="text-sm font-bold text-gray-500 group-hover:text-gray-700 transition-colors">
-                                    C'est un cadeau à gagner (Génère un coupon)
+                                    C&apos;est un cadeau à gagner (Génère un coupon)
                                 </span>
                             </label>
                         </form>
@@ -356,21 +515,42 @@ export default function CampaignsPage() {
 
                 {/* Right column: Info/Rules */}
                 <div className="space-y-6">
+                    <div className="bg-gray-900 p-8 rounded-[2.5rem] shadow-xl text-white space-y-6">
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-center">
+                                <h4 className="text-xl font-black uppercase tracking-tight">Probabilité Globale</h4>
+                                <span className="text-2xl font-black text-[#1d1dd7]">{campaign?.win_probability || 50}%</span>
+                            </div>
+                            <input
+                                type="range"
+                                min="50"
+                                max="100"
+                                step="1"
+                                className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-[#1d1dd7]"
+                                value={campaign?.win_probability || 50}
+                                onChange={(e) => updateCampaignProbability(parseInt(e.target.value))}
+                            />
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                                Chances totales de tomber sur un lot gagnant (Min 50%)
+                            </p>
+                        </div>
+                    </div>
+
                     <div className="bg-[#1d1dd7] p-8 rounded-[2.5rem] shadow-xl text-white relative overflow-hidden">
                         <div className="absolute top-[-20px] right-[-20px] w-32 h-32 bg-white/10 rounded-full blur-2xl" />
                         <h4 className="text-xl font-black mb-4 uppercase tracking-tight">Règles du jeu</h4>
                         <ul className="space-y-4 text-white/80 text-sm font-medium">
                             <li className="flex gap-3">
                                 <span className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-[10px] font-bold shrink-0">1</span>
-                                Les probabilités sont égales pour tous les lots.
+                                La probabilité globale définit si le client gagne un lot ou non.
                             </li>
                             <li className="flex gap-3">
                                 <span className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-[10px] font-bold shrink-0">2</span>
-                                Minimum 1 lot requis pour que la roue fonctionne.
+                                Les lots gagnants et perdants sont ensuite répartis équitablement.
                             </li>
                             <li className="flex gap-3">
                                 <span className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-[10px] font-bold shrink-0">3</span>
-                                Modifier la roue n'affecte pas les coupons déjà émis.
+                                Modifier la roue n&apos;affecte pas les coupons déjà émis.
                             </li>
                         </ul>
                     </div>

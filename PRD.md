@@ -47,6 +47,10 @@ Le produit propose :
 * Gestion de modèles de roue (templates).
 * Alertes Anti-Bad Buzz (Filtrage des notes négatives sur le Dashboard).
 * Analytics visuels (Graphiques d'activité et de satisfaction).
+* **Personnalisation par segment** : Couleur de fond spécifique pour chaque lot de la roue.
+* **Gestion des probabilités** : Barre de réglage des probabilités de gain par lot.
+* **Studio Print évolué** : Format A5, modèles de templates et choix de 3 couleurs pour les affiches.
+* **Comptes Admin** : Rôles spécifiques pour tests sans restrictions.
 
 ---
 
@@ -153,6 +157,7 @@ Section **Focus Anti-Bad Buzz** (Affichage prioritaire des notes < 3 si l'option
 * Activer / désactiver.
 * Supprimer campagne (optionnel MVP).
 * **Modèles de roue** : Sauvegarder des configurations de lots pour basculer rapidement sans changer de QR code.
+* **Gestion des probabilités** : Interface avec curseur pour définir la probabilité de chaque segment (Total 100%).
 
 ---
 
@@ -162,6 +167,7 @@ Section **Focus Anti-Bad Buzz** (Affichage prioritaire des notes < 3 si l'option
 * Modifier texte segment.
 * Supprimer segment.
 * Aperçu visuel.
+* **Couleur du segment** : Définir une couleur de fond spécifique pour chaque récompense.
 
 Contraintes :
 
@@ -175,6 +181,8 @@ Contraintes :
 * Génération QR unique par campagne.
 * Téléchargement PNG.
 * Copie lien direct.
+* **Studio Print** : Génération d'affiches au format A5 avec choix de templates et de 3 variantes de couleurs (par exemple : Clair, Sombre, Marque).
+* **Correction Logo** : Assurer l'affichage du logo restaurant sur les affiches générées.
 
 ---
 
@@ -183,6 +191,7 @@ Contraintes :
 * Saisie manuelle du code.
 * Vérification validité.
 * Passage en statut “used”.
+* **Durée de validité** : Augmentée à 48 heures par défaut.
 * **Historique complet** : Vue filtrable par statut (utilisé, expiré, non utilisé) et date.
 
 ---
@@ -419,4 +428,4 @@ Toute divergence doit être validée.
 
 ---
 
-PRD Version: 1.1 (Post-MVP Refinements)
+PRD Version: 1.2 (Post-User Test Refinements)

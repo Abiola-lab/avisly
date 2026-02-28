@@ -119,7 +119,7 @@ export default function PlayLandingPage() {
 
             <button
                 onClick={() => router.push(`/play/${campaignId}/spin`)}
-                className="w-full bg-white py-5 rounded-[2rem] font-black text-lg flex items-center justify-center gap-3 shadow-[0_10px_40px_rgba(0,0,0,0.3)] hover:scale-[1.02] transition-all active:scale-95"
+                className="w-full bg-white py-6 rounded-[2.5rem] font-black text-xl flex items-center justify-center gap-3 shadow-[0_20px_40px_rgba(0,0,0,0.3)] active:scale-95 transition-transform"
                 style={{ color: primaryColor }}
             >
                 LANCER LA ROUE <ArrowRight className="w-6 h-6" />

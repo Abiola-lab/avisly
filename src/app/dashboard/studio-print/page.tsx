@@ -10,44 +10,46 @@ import {
     QrCode,
     CheckCircle2,
     Info,
-    Star
+    Star,
+    Palette,
+    Layers
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 
-const TEMPLATES = [
-    {
-        id: 'table-stand',
-        name: 'Chevalet de table',
-        description: 'Format idéal pour poser sur les tables (10x15cm)',
-        dimensions: '100mm x 150mm',
-        previewClass: 'w-[300px] h-[450px]',
-        scale: 0.7
-    },
-    {
-        id: 'square-sticker',
-        name: 'Sticker Carré',
-        description: 'Parfait pour la caisse ou la vitrine',
-        dimensions: '120mm x 120mm',
-        previewClass: 'w-[400px] h-[400px]',
-        scale: 0.7
-    },
-    {
-        id: 'poster-a4',
-        name: 'Affiche A4',
-        description: 'Pour une visibilité maximale en salle',
-        dimensions: '210mm x 297mm',
-        previewClass: 'w-[420px] h-[594px]',
-        scale: 0.6
-    }
+// Universal high-quality layout
+const FLYER_LAYOUT = {
+    previewClass: 'w-[480px] h-[850px]',
+    scale: 0.7
+};
+
+const DESIGNS = [
+    { id: 'impact', name: 'Ultra Impact' },
+    { id: 'minimal', name: 'Épuré' },
+    { id: 'neon', name: 'Néon Dark' }
 ];
 
+interface Palette {
+    primary: string;
+    secondary: string;
+    accent: string;
+}
+
+const PALETTES = {
+    electric: { id: 'electric', name: 'Electrique', primary: '#1d1dd7', secondary: '#ffffff', accent: '#ff0080' },
+    luxury: { id: 'luxury', name: 'Luxe', primary: '#000000', secondary: '#ffffff', accent: '#fbbf24' },
+    fresh: { id: 'fresh', name: 'Fresh', primary: '#059669', secondary: '#ffffff', accent: '#fef08a' }
+};
+
 export default function StudioPrintPage() {
-    const [selectedTemplate, setSelectedTemplate] = useState(TEMPLATES[0]);
+    const [selectedDesign, setSelectedDesign] = useState('impact');
+    const [palette, setPalette] = useState<Palette>(PALETTES.electric);
+
     const [loading, setLoading] = useState(true);
     const [restaurantId, setRestaurantId] = useState('');
     const [restaurantName, setRestaurantName] = useState('Votre Restaurant');
     const [logoUrl, setLogoUrl] = useState<string | null>(null);
-    const [primaryColor, setPrimaryColor] = useState('#1d1dd7');
+    const [campaignId, setCampaignId] = useState<string | null>(null);
+    const [saving, setSaving] = useState(false);
 
     const supabase = createClient();
 
@@ -58,7 +60,17 @@ export default function StudioPrintPage() {
 
             const { data: restData } = await supabase
                 .from('restaurants')
-                .select('id, name, logo_url, primary_color')
+                .select(`
+                    id, 
+                    name, 
+                    logo_url,
+                    campaigns (
+                        id,
+                        color_primary,
+                        color_secondary,
+                        color_accent
+                    )
+                `)
                 .eq('user_id', user.id)
                 .single();
 
@@ -66,7 +78,18 @@ export default function StudioPrintPage() {
                 setRestaurantName(restData.name);
                 setRestaurantId(restData.id);
                 setLogoUrl(restData.logo_url);
-                if (restData.primary_color) setPrimaryColor(restData.primary_color);
+
+                const activeCampaign = (restData.campaigns as any[])?.find(c => c.id) || restData.campaigns?.[0];
+                if (activeCampaign) {
+                    setCampaignId(activeCampaign.id);
+                    if (activeCampaign.color_primary) {
+                        setPalette({
+                            primary: activeCampaign.color_primary,
+                            secondary: activeCampaign.color_secondary || '#ffffff',
+                            accent: activeCampaign.color_accent || '#ff0080'
+                        });
+                    }
+                }
             }
 
             setLoading(false);
@@ -74,6 +97,26 @@ export default function StudioPrintPage() {
 
         fetchData();
     }, []);
+
+    const updateCampaignPalette = async (newPalette: Palette) => {
+        if (!campaignId) return;
+        setPalette(newPalette);
+        setSaving(true);
+        try {
+            await supabase
+                .from('campaigns')
+                .update({
+                    color_primary: newPalette.primary,
+                    color_secondary: newPalette.secondary,
+                    color_accent: newPalette.accent
+                })
+                .eq('id', campaignId);
+        } catch (err) {
+            console.error('Error saving palette:', err);
+        } finally {
+            setSaving(false);
+        }
+    };
 
     const gameUrl = restaurantId ? `${window.location.origin}/play/r/${restaurantId}` : '';
 
@@ -91,69 +134,118 @@ export default function StudioPrintPage() {
 
     return (
         <div className="p-8 max-w-7xl mx-auto space-y-12">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 no-print">
                 <div className="space-y-4">
                     <h1 className="text-5xl font-black tracking-tight text-gray-900 uppercase italic underline decoration-[#1d1dd7] decoration-[12px] underline-offset-8">Studio Print</h1>
                     <p className="text-gray-500 font-medium text-lg pt-2">Créez vos supports physiques personnalisés pour récolter des avis.</p>
                 </div>
 
-                <button
-                    onClick={handlePrint}
-                    className="flex items-center gap-4 px-10 py-5 bg-gray-900 text-white font-black rounded-3xl hover:bg-black transition-all shadow-2xl active:scale-95 group"
-                >
-                    <Printer className="w-6 h-6 group-hover:rotate-12 transition-transform" /> IMPRIMER LE SUPPORT
-                </button>
+                <div className="flex flex-col items-end gap-3">
+                    <button
+                        onClick={handlePrint}
+                        className="flex items-center gap-4 px-10 py-5 bg-gray-900 text-white font-black rounded-3xl hover:bg-black transition-all shadow-2xl active:scale-95 group"
+                    >
+                        <Printer className="w-6 h-6 group-hover:rotate-12 transition-transform" /> PRÊT À IMPRIMER ?
+                    </button>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest no-print">
+                        (Vous pourrez choisir le format d'impression dans la boîte de dialogue)
+                    </p>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
                 {/* Configuration Panel */}
-                <div className="lg:col-span-1 space-y-6">
-                    <div className="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm space-y-10">
-                        {/* Template Selection */}
-                        <div className="space-y-6">
+                <div className="lg:col-span-1 space-y-6 no-print">
+                    <div className="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm space-y-8">
+                        {/* Design Selection */}
+                        <div className="space-y-4">
                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                                <LayoutTemplate className="w-4 h-4" /> 1. Sélectionner le format
+                                <Layers className="w-4 h-4" /> 1. Modèle (Template)
                             </label>
-                            <div className="grid grid-cols-1 gap-4">
-                                {TEMPLATES.map(template => (
+                            <div className="grid grid-cols-3 gap-2">
+                                {DESIGNS.map(design => (
                                     <button
-                                        key={template.id}
-                                        onClick={() => setSelectedTemplate(template)}
-                                        className={`w-full p-6 rounded-[2rem] text-left border-4 transition-all flex items-center justify-between group h-24 ${selectedTemplate.id === template.id
-                                            ? 'border-[#1d1dd7] bg-blue-50/30'
-                                            : 'border-gray-50 bg-gray-50/50 hover:bg-white hover:border-gray-200 hover:shadow-lg'
+                                        key={design.id}
+                                        onClick={() => setSelectedDesign(design.id)}
+                                        className={`p-3 rounded-xl text-center border-2 transition-all text-[9px] font-black uppercase tracking-tight ${selectedDesign === design.id
+                                            ? 'border-[#1d1dd7] bg-blue-50/30 text-[#1d1dd7]'
+                                            : 'border-gray-50 bg-gray-50/50 hover:bg-white hover:border-gray-200 text-gray-400'
                                             }`}
                                     >
-                                        <div>
-                                            <p className={`font-black text-sm uppercase tracking-tight ${selectedTemplate.id === template.id ? 'text-[#1d1dd7]' : 'text-gray-900'}`}>
-                                                {template.name}
-                                            </p>
-                                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">
-                                                {template.dimensions}
-                                            </p>
-                                        </div>
-                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${selectedTemplate.id === template.id ? 'bg-[#1d1dd7] text-white rotate-90' : 'bg-white text-gray-300'
-                                            }`}>
-                                            <ChevronRight className="w-4 h-4" />
-                                        </div>
+                                        {design.name}
                                     </button>
                                 ))}
                             </div>
                         </div>
 
-                        <div className="p-6 flex items-center gap-2">
-                            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center relative shadow-sm border border-gray-100 group">
-                                <img src="/logo_avisly.svg" alt="Avisly" className="w-[80%] h-[80%] object-contain group-hover:scale-110 group-hover:rotate-3 transition-all duration-500" />
+                        {/* Color Selection */}
+                        <div className="space-y-6">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                <Palette className="w-4 h-4" /> 2. Palette de l'affiche
+                            </label>
+
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-1 gap-2">
+                                    {Object.values(PALETTES).map(p => (
+                                        <button
+                                            key={p.id}
+                                            onClick={() => updateCampaignPalette({ primary: p.primary, secondary: p.secondary, accent: p.accent })}
+                                            className={`flex items-center justify-between p-3 rounded-2xl border-2 transition-all ${palette.primary === p.primary && palette.accent === p.accent
+                                                ? 'border-gray-900 bg-gray-50'
+                                                : 'border-transparent bg-gray-100/50 hover:bg-white hover:border-gray-200 opacity-60 hover:opacity-100'
+                                                }`}
+                                        >
+                                            <span className="text-[10px] font-black uppercase tracking-tight ml-2">{p.name}</span>
+                                            <div className="flex gap-1 pr-2">
+                                                <div className="w-6 h-6 rounded-full border border-white/20" style={{ backgroundColor: p.primary }} />
+                                                <div className="w-6 h-6 rounded-full border border-white/20" style={{ backgroundColor: p.secondary }} />
+                                                <div className="w-6 h-6 rounded-full border border-white/20" style={{ backgroundColor: p.accent }} />
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <div className="pt-4 border-t border-gray-100 space-y-4">
+                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest text-center">Ou personnalisation fine</p>
+                                    <div className="grid grid-cols-3 gap-3">
+                                        <div className="space-y-2">
+                                            <input
+                                                type="color"
+                                                className="w-full h-12 p-1 bg-white border border-gray-100 rounded-xl cursor-pointer"
+                                                value={palette.primary}
+                                                onChange={(e) => updateCampaignPalette({ ...palette, primary: e.target.value })}
+                                            />
+                                            <p className="text-[8px] text-center font-bold uppercase text-gray-400">Fond</p>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <input
+                                                type="color"
+                                                className="w-full h-12 p-1 bg-white border border-gray-100 rounded-xl cursor-pointer"
+                                                value={palette.secondary}
+                                                onChange={(e) => updateCampaignPalette({ ...palette, secondary: e.target.value })}
+                                            />
+                                            <p className="text-[8px] text-center font-bold uppercase text-gray-400">Texte</p>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <input
+                                                type="color"
+                                                className="w-full h-12 p-1 bg-white border border-gray-100 rounded-xl cursor-pointer"
+                                                value={palette.accent}
+                                                onChange={(e) => updateCampaignPalette({ ...palette, accent: e.target.value })}
+                                            />
+                                            <p className="text-[8px] text-center font-bold uppercase text-gray-400">Accent</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <h1 className="text-xl font-extrabold text-gray-900 tracking-tight">Avisly</h1>
                         </div>
 
                         {/* Tips */}
-                        <div className="p-8 bg-blue-50/50 rounded-[2rem] border-2 border-blue-100/50 flex gap-5">
-                            <Info className="w-6 h-6 text-[#1d1dd7] shrink-0" />
-                            <p className="text-xs font-bold text-gray-600 leading-relaxed uppercase tracking-tighter">
-                                <span className="block mb-1 font-black text-[#1d1dd7] tracking-widest text-[10px]">Conseil Avisly</span>
-                                Utilisez du papier épais pour un rendu pro. Placez le support bien en vue pour maximiser les scans !
+                        <div className="p-6 bg-blue-50/50 rounded-[2rem] border-2 border-blue-100/50 flex gap-4">
+                            <Info className="w-5 h-5 text-[#1d1dd7] shrink-0" />
+                            <p className="text-[10px] font-bold text-gray-600 leading-relaxed uppercase tracking-tighter">
+                                <span className="block mb-1 font-black text-[#1d1dd7] tracking-widest text-[9px]">Conseil Avisly</span>
+                                L'affiche est optimisée pour tous les formats (A4, A5, DL).
                             </p>
                         </div>
                     </div>
@@ -161,152 +253,142 @@ export default function StudioPrintPage() {
 
                 {/* Preview Panel */}
                 <div className="lg:col-span-2">
-                    <div className="bg-[#111] p-6 md:p-12 rounded-[4rem] border border-gray-100 min-h-[850px] flex items-center justify-center relative overflow-hidden group shadow-2xl">
-                        <div className="absolute top-8 left-8 flex items-center gap-3 text-[10px] font-black text-gray-500 uppercase tracking-widest border border-white/10 px-6 py-2.5 rounded-full bg-black/40 backdrop-blur-xl shadow-sm z-20">
+                    <div className="bg-[#111] p-4 md:p-8 rounded-[3rem] border border-gray-100 min-h-[950px] flex items-center justify-center relative overflow-hidden group shadow-2xl no-print">
+                        <div className="absolute top-6 left-6 flex items-center gap-3 text-[10px] font-black text-gray-500 uppercase tracking-widest border border-white/10 px-6 py-2.5 rounded-full bg-black/40 backdrop-blur-xl shadow-sm z-20">
                             <Smartphone className="w-3 h-3" /> Visualisation avant impression
                         </div>
 
-                        {/* Scaling helper to ensure the flyer is ALWAYS fully visible */}
                         <div
-                            className="flex items-center justify-center transition-all duration-500"
-                            style={{
-                                transform: `scale(${selectedTemplate.scale})`,
-                                transformOrigin: 'center'
-                            }}
+                            className={`${FLYER_LAYOUT.previewClass} bg-white shadow-2xl overflow-hidden relative transition-all duration-700`}
+                            style={{ transform: `scale(${FLYER_LAYOUT.scale})` }}
                         >
-                            {/* The Printable Area */}
-                            <div
-                                id="printable-flyer"
-                                className={`bg-white shadow-[0_64px_128px_-32px_rgba(0,0,0,0.3)] flex flex-col items-center justify-between text-center p-6 relative overflow-hidden animate-in fade-in zoom-in duration-700 max-h-full ${selectedTemplate.previewClass}`}
-                            >
-                                {/* Decorative elements based on Brand Identity */}
-                                <div className="absolute top-0 left-0 w-full h-3" style={{ backgroundColor: primaryColor }} />
-                                <div className="absolute bottom-0 left-0 w-full h-3" style={{ backgroundColor: primaryColor }} />
-
-                                <div className="w-full flex-1 flex flex-col items-center justify-between py-6 relative z-10">
-                                    {/* Brand Logo / Name */}
-                                    <div className="h-10 flex items-center justify-center shrink-0">
-                                        {logoUrl ? (
-                                            <img src={logoUrl} alt={restaurantName} className="max-h-full max-w-[160px] object-contain" />
-                                        ) : (
-                                            <p className="font-black text-xl italic tracking-[0.25em] uppercase" style={{ color: primaryColor }}>
-                                                {restaurantName}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    {/* Titles */}
-                                    <div className="space-y-1.5 shrink-0 mt-4">
-                                        <h2 className="text-4xl font-black tracking-tighter leading-none text-gray-900 uppercase italic">
-                                            SCANNEZ & <span style={{ color: primaryColor }}>GAGNEZ</span>
-                                        </h2>
-                                        <p className="text-gray-500 font-bold text-[10px] uppercase tracking-[0.4em] mb-4">Tentez votre chance</p>
-                                    </div>
-
-                                    {/* QR Code Container */}
-                                    <div className="relative isolate flex-1 flex flex-col items-center justify-center py-6">
-                                        <div
-                                            className="absolute inset-0 blur-3xl rounded-full scale-125 opacity-10 -z-10"
-                                            style={{ backgroundColor: primaryColor }}
-                                        />
-
-                                        <div className="relative p-4 bg-white border-[6px] border-gray-900 rounded-[2rem] shadow-xl">
-                                            <QRCodeSVG
-                                                value={gameUrl}
-                                                size={selectedTemplate.id === 'poster-a4' ? 220 : 160}
-                                                level="H"
-                                                includeMargin={false}
-                                                fgColor="#111827"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Footer / Social Proof */}
-                                    <div className="space-y-4 w-full shrink-0 mt-6">
-                                        <div className="space-y-2">
-                                            <div className="flex items-center justify-center gap-1.5">
-                                                {[1, 2, 3, 4, 5].map(i => (
-                                                    <Star key={i} className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                                                ))}
-                                            </div>
-                                            <p className="text-xs font-black text-gray-900 uppercase tracking-tight max-w-[240px] mx-auto leading-tight">
-                                                Laissez votre avis sur Google <br /> & débloquez votre surprise !
-                                            </p>
-                                        </div>
-
-                                        <div className="flex items-center justify-center gap-5 opacity-50">
-                                            <div className="flex items-center gap-2 text-[8px] font-black text-gray-900 uppercase tracking-[0.3em]">
-                                                <CheckCircle2 className="w-3.5 h-3.5 text-green-600" /> 30 SECONDES
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            <FlyerContent
+                                design={selectedDesign}
+                                palette={palette}
+                                logoUrl={logoUrl}
+                                restaurantName={restaurantName}
+                                gameUrl={gameUrl}
+                            />
                         </div>
+                    </div>
+
+                    {/* Hidden printable area */}
+                    <div className="print-only hidden">
+                        <FlyerContent
+                            design={selectedDesign}
+                            palette={palette}
+                            logoUrl={logoUrl}
+                            restaurantName={restaurantName}
+                            gameUrl={gameUrl}
+                        />
                     </div>
                 </div>
 
-                {/* Print CSS - Enhanced for full support printing */}
                 <style jsx global>{`
-                @media print {
-                    /* Hide everything except the flyer */
-                    nav, aside, header, button, .lg\\:col-span-1, .absolute, h1, p, div[role="alert"] {
-                        display: none !important;
+                    @media print {
+                        .no-print { display: none !important; }
+                        .print-only { display: block !important; }
+                        body { background: white !important; margin: 0; padding: 0; }
+                        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
                     }
-                    
-                    body {
-                        background: white !important;
-                        padding: 0 !important;
-                        margin: 0 !important;
-                    }
-                    
-                    #__next, main {
-                        padding: 0 !important;
-                        margin: 0 !important;
-                        max-width: 100% !important;
-                    }
-                    
-                    .lg\\:col-span-2 {
-                        width: 100% !important;
-                        padding: 0 !important;
-                        margin: 0 !important;
-                        background: white !important;
-                        border: none !important;
-                        display: block !important;
-                    }
+                `}</style>
+            </div>
+        </div>
+    );
+}
 
-                    /* Important: Reset scale for printing */
-                    .flex.items-center.justify-center.transition-all {
-                        transform: scale(1) !important;
-                        width: 100% !important;
-                        height: 100vh !important;
-                    }
-                    
-                    div[id="printable-flyer"] {
-                        box-shadow: none !important;
-                        border: none !important;
-                        margin: 0 auto !important;
-                        width: 100vw !important;
-                        height: 100vh !important;
-                        display: flex !important;
-                        align-items: center !important;
-                        justify-content: center !important;
-                        page-break-after: always;
-                        padding: 0 !important;
-                        transform: scale(1) !important;
-                    }
-                    
-                    /* Force color printing */
-                    * {
-                        -webkit-print-color-adjust: exact !important;
-                        print-color-adjust: exact !important;
-                    }
+function FlyerContent({ design, palette, logoUrl, restaurantName, gameUrl }: { design: string, palette: Palette, logoUrl: string | null, restaurantName: string, gameUrl: string }) {
+    return (
+        <div
+            className="w-full h-full flex flex-col relative"
+            style={{ backgroundColor: palette.primary }}
+        >
+            {/* Design Patterns */}
+            {design === 'minimal' && (
+                <div className="absolute inset-0 opacity-10" style={{ backgroundImage: `radial-gradient(${palette.secondary} 1px, transparent 1px)`, backgroundSize: '16px 16px' }} />
+            )}
 
-                    .animate-in {
-                        animation: none !important;
-                    }
-                }
-            `}</style>
+            {design === 'impact' && (
+                <>
+                    <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] rotate-45 opacity-20" style={{ backgroundColor: palette.accent }} />
+                    <div className="absolute bottom-[-5%] left-[-5%] w-[40%] h-[40%] rounded-full opacity-10" style={{ backgroundColor: palette.secondary }} />
+                    <div className="absolute top-[20%] left-[-10%] w-full h-[2px] rotate-12 opacity-30" style={{ backgroundColor: palette.accent }} />
+                    <div className="absolute bottom-[30%] right-[-5%] w-[30%] h-[30%] border-[20px] border-white/5 rounded-full" />
+                    <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `radial-gradient(${palette.secondary} 2px, transparent 2px)`, backgroundSize: '24px 24px' }} />
+                </>
+            )}
+
+            {design === 'neon' && (
+                <>
+                    <div className="absolute inset-0 bg-gradient-to-br from-black/0 via-black/40 to-black/80" />
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] blur-[120px] opacity-20 -z-10" style={{ backgroundColor: palette.accent }} />
+                </>
+            )}
+
+            <div className="w-full flex-1 flex flex-col items-center justify-between relative z-10 py-10 px-10">
+                {/* Brand Logo */}
+                <div className="h-20 w-full flex items-center justify-center shrink-0 mb-4 px-6">
+                    {logoUrl ? (
+                        <img
+                            src={logoUrl}
+                            alt={restaurantName}
+                            className="max-h-full max-w-[260px] object-contain drop-shadow-sm filter brightness-0 invert"
+                            style={{ filter: palette.secondary === '#ffffff' ? 'brightness(0) invert(1)' : 'none' }}
+                        />
+                    ) : (
+                        <p className="font-black text-3xl italic tracking-[0.2em] uppercase leading-none" style={{ color: palette.secondary }}>
+                            {restaurantName}
+                        </p>
+                    )}
+                </div>
+
+                {/* Main Message */}
+                <div className="space-y-4 shrink-0 mt-4 md:mt-6">
+                    <h2 className="font-black tracking-tighter leading-[0.9] uppercase italic text-6xl" style={{ color: palette.secondary }}>
+                        SCANNEZ <br />
+                        <span className="bg-white px-4 py-2 -rotate-2 inline-block shadow-sm" style={{ color: palette.primary }}>& GAGNEZ</span>
+                    </h2>
+                    <div className="h-1.5 mx-auto rounded-full w-24 mt-4" style={{ backgroundColor: palette.accent }} />
+                    <p className="font-bold text-[14px] uppercase tracking-[0.5em] opacity-80 mt-2">Tentez votre chance !</p>
+                </div>
+
+                {/* QR Code */}
+                <div className="relative isolate flex items-center justify-center py-6">
+                    <div
+                        className="absolute inset-0 blur-[40px] rounded-full scale-110 opacity-30 -z-10"
+                        style={{ backgroundColor: palette.accent }}
+                    />
+
+                    <div className="relative p-6 bg-white rounded-[3rem] shadow-2xl border-[12px] border-black/5">
+                        <QRCodeSVG
+                            value={gameUrl}
+                            size={180}
+                            level="H"
+                            includeMargin={false}
+                            fgColor="#000000"
+                        />
+                    </div>
+                </div>
+
+                {/* Footer Message */}
+                <div className="space-y-4 w-full shrink-0">
+                    <div className="space-y-2">
+                        <div className="flex items-center justify-center gap-2">
+                            {[1, 2, 3, 4, 5].map(i => (
+                                <Star key={i} className="w-7 h-7 fill-yellow-400 text-yellow-400 drop-shadow-sm" />
+                            ))}
+                        </div>
+                        <p className="text-2xl font-black uppercase tracking-tight max-w-[340px] mx-auto leading-tight text-center" style={{ color: palette.secondary }}>
+                            Votre avis compte !
+                        </p>
+                    </div>
+
+                    <div className="flex items-center justify-center">
+                        <div className="px-7 py-3 rounded-full bg-black/10 backdrop-blur-md border border-white/20 flex items-center gap-3 text-xs font-black uppercase tracking-[0.35em]" style={{ color: palette.secondary }}>
+                            <CheckCircle2 className="w-5 h-5" style={{ color: palette.accent }} /> 30 SECONDES CHRONO
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );

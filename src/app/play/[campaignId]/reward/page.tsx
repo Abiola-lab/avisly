@@ -72,8 +72,12 @@ export default function RewardPage() {
     }
 
     const formatTime = (seconds: number) => {
-        const m = Math.floor(seconds / 60)
+        const h = Math.floor(seconds / 3600)
+        const m = Math.floor((seconds % 3600) / 60)
         const s = seconds % 60
+        if (h > 0) {
+            return `${h}h ${m < 10 ? '0' : ''}${m}m`
+        }
         return `${m}:${s < 10 ? '0' : ''}${s}`
     }
 
@@ -129,7 +133,7 @@ export default function RewardPage() {
                 {data.rewards?.is_prize ? (
                     <div className="space-y-4">
                         <div className="text-center px-4">
-                            <p className="text-white font-bold mb-4">
+                            <p className="text-white/80 font-bold mb-4 text-sm leading-relaxed uppercase tracking-tight">
                                 {isPositive
                                     ? "Merci pour votre super note ! Un petit avis Google nous aiderait énormément 🙏"
                                     : "Félicitations pour votre gain ! Votre avis compte pour nous aider à nous améliorer. 🙏"}
@@ -137,25 +141,39 @@ export default function RewardPage() {
                         </div>
                         <button
                             onClick={handleGoogleClick}
-                            className="w-full bg-[#facc15] py-5 rounded-[2rem] font-black text-lg flex items-center justify-center gap-3 shadow-2xl hover:scale-105 transition-all"
-                            style={{ color: 'var(--primary-color)' }}
+                            className="w-full bg-white py-5 rounded-[2.5rem] font-black text-lg flex items-center justify-center gap-3 shadow-[0_20px_40px_rgba(0,0,0,0.3)] active:scale-95 transition-all border border-gray-100"
                         >
-                            LAISSER UN AVIS GOOGLE <ExternalLink className="w-6 h-6" />
+                            <div className="flex items-center gap-1.5 grayscale-0">
+                                <span className="text-[#4285F4]">G</span>
+                                <span className="text-[#EA4335]">o</span>
+                                <span className="text-[#FBBC05]">o</span>
+                                <span className="text-[#4285F4]">g</span>
+                                <span className="text-[#34A853]">l</span>
+                                <span className="text-[#EA4335]">e</span>
+                            </div>
+                            <span className="text-gray-900 tracking-tighter">PUBLIER MON AVIS</span>
                         </button>
                     </div>
                 ) : isPositive ? (
                     <div className="space-y-4">
                         <div className="text-center px-4">
-                            <p className="text-white/80 font-bold mb-4">
-                                Dommage pour cette fois ! On espère vous revoir très vite. Un petit avis Google ? 🙏
+                            <p className="text-white/80 font-bold mb-4 text-sm leading-relaxed uppercase tracking-tight">
+                                Dommage pour cette fois... On espère vous revoir très vite ! Un petit avis Google ? 🙏
                             </p>
                         </div>
                         <button
                             onClick={handleGoogleClick}
-                            className="w-full bg-[#facc15] py-5 rounded-[2rem] font-black text-lg flex items-center justify-center gap-3 shadow-2xl hover:scale-105 transition-all"
-                            style={{ color: 'var(--primary-color)' }}
+                            className="w-full bg-white py-5 rounded-[2.5rem] font-black text-lg flex items-center justify-center gap-3 shadow-[0_20px_40px_rgba(0,0,0,0.3)] active:scale-95 transition-all border border-gray-100"
                         >
-                            LAISSER UN AVIS GOOGLE <ExternalLink className="w-6 h-6" />
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-[#4285F4]">G</span>
+                                <span className="text-[#EA4335]">o</span>
+                                <span className="text-[#FBBC05]">o</span>
+                                <span className="text-[#4285F4]">g</span>
+                                <span className="text-[#34A853]">l</span>
+                                <span className="text-[#EA4335]">e</span>
+                            </div>
+                            <span className="text-gray-900 tracking-tighter">PUBLIER MON AVIS</span>
                         </button>
                     </div>
                 ) : (

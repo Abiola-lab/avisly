@@ -8,10 +8,8 @@ export async function GET() {
 
         if (!user) return NextResponse.json({ canDebug: false });
 
-        const debugEnabled = process.env.DEBUG_TOOLS_ENABLED === 'true';
-        const adminEmail = process.env.ADMIN_EMAIL;
-
-        const canDebug = debugEnabled && user.email === adminEmail;
+        const { isAdmin } = await import('@/lib/admin');
+        const canDebug = isAdmin(user.email);
 
         return NextResponse.json({ canDebug });
     } catch (err) {

@@ -25,8 +25,12 @@ export async function POST(request: Request) {
             .gt('created_at', twentyFourHoursAgo)
             .limit(1)
 
-        // On bloque si déjà joué, sauf si on est en local et que l'URL contient un flag de test (optionnel)
-        if (existingSessions && existingSessions.length > 0 && !isLocal) {
+        const { data: { user } } = await supabase.auth.getUser()
+        const adminEmails = ['akobiabiola0@gmail.com', 'hakim.digital05@gmail.com']
+        const isAdmin = user && adminEmails.includes(user.email || '')
+
+        // On bloque si déjà joué, sauf si on est en local, ou si c'est un admin (pour les tests)
+        if (existingSessions && existingSessions.length > 0 && !isLocal && !isAdmin) {
             return NextResponse.json({
                 error: 'FRAUD_LIMIT',
                 message: 'Vous avez déjà participé aujourd\'hui avec ce téléphone. Revenez demain !'

@@ -17,7 +17,15 @@ export async function POST(request: Request) {
         if (sessError || !session) return NextResponse.json({ error: 'Session invalide' }, { status: 400 })
         if (session.reward_id) return NextResponse.json({ error: 'Vous avez déjà joué' }, { status: 400 })
 
-        // 2. Fetch active rewards for the campaign
+        // 2. Fetch campaign probability and active rewards
+        const { data: campaign, error: campError } = await supabase
+            .from('campaigns')
+            .select('win_probability')
+            .eq('id', campaignId)
+            .single()
+
+        if (campError || !campaign) return NextResponse.json({ error: 'Campagne introuvable' }, { status: 400 })
+
         const { data: rewards, error: rewError } = await supabase
             .from('rewards')
             .select('*')
@@ -27,9 +35,22 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Aucun lot disponible' }, { status: 400 })
         }
 
-        // 3. Pick random reward (equal probability)
-        const randomIndex = Math.floor(Math.random() * rewards.length)
-        const pickedReward = rewards[randomIndex]
+        // 3. Decide if user wins or loses based on global probability
+        const isWinningSpin = (Math.random() * 100) < (campaign.win_probability || 50)
+
+        let pool = rewards.filter(r => r.is_prize === isWinningSpin)
+
+        // Fallback if one pool is empty
+        if (pool.length === 0) {
+            pool = rewards
+        }
+
+        // Pick randomly from the selected pool
+        const randomIndexInPool = Math.floor(Math.random() * pool.length)
+        const pickedReward = pool[randomIndexInPool]
+
+        // Find the absolute index in the original rewards array (for the wheel animation)
+        const absoluteIndex = rewards.findIndex(r => r.id === pickedReward.id)
 
         // 4. Update session with reward_id
         const { error: updateError } = await supabase
@@ -46,11 +67,11 @@ export async function POST(request: Request) {
         }])
 
         return NextResponse.json({
-            winnerIndex: randomIndex,
+            winnerIndex: absoluteIndex,
             rewardLabel: pickedReward.label
         })
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Spin Error:', error)
         return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
     }
