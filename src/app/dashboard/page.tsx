@@ -88,16 +88,17 @@ export default function DashboardPage() {
                     ? (ratingsData!.reduce((acc, curr) => acc + (curr.rating || 0), 0) / ratingsCount).toFixed(1)
                     : '0.0'
 
-                // ROI Estimation (15€ average ticket)
-                const roiRevenue = (usedCoupons || 0) * 15
+                // Impact CA Estimation (using custom average ticket)
+                const avgTicket = restData.average_ticket || 15
+                const roiRevenue = (usedCoupons || 0) * avgTicket
                 setRoiData({ revenue: roiRevenue, customers: usedCoupons || 0 })
 
                 // Funnel Calculation
                 setFunnelData([
-                    { name: 'Scans QR', value: scans || 0, percent: 100, color: 'blue' },
-                    { name: 'Jeux lancés', value: spins || 0, percent: scans ? Math.round(((spins || 0) / scans) * 100) : 0, color: 'purple' },
-                    { name: 'Notes reçues', value: ratingsCount, percent: spins ? Math.round((ratingsCount / spins) * 100) : 0, color: 'yellow' },
-                    { name: 'Clics Google', value: googleClicks || 0, percent: ratingsCount ? Math.round(((googleClicks || 0) / ratingsCount) * 100) : 0, color: 'indigo' },
+                    { name: 'Scans QR', value: scans || 0, percent: 100, color: '#1d1dd7' },
+                    { name: 'Jeux lancés', value: spins || 0, percent: scans ? Math.round(((spins || 0) / scans) * 100) : 0, color: '#4f46e5' },
+                    { name: 'Notes reçues', value: ratingsCount, percent: spins ? Math.round((ratingsCount / spins) * 100) : 0, color: '#6366f1' },
+                    { name: 'Clics Google', value: googleClicks || 0, percent: ratingsCount ? Math.round(((googleClicks || 0) / ratingsCount) * 100) : 0, color: '#818cf8' },
                 ])
 
                 setStats([
@@ -256,31 +257,43 @@ export default function DashboardPage() {
                         </div>
                     </div>
 
-                    <div className="space-y-6">
-                        {funnelData.map((step, i) => (
-                            <div key={step.name} className="relative">
-                                <div className="flex justify-between items-end mb-2 px-1">
-                                    <span className="text-xs font-black text-gray-400 uppercase tracking-widest">{step.name}</span>
-                                    <span className="text-sm font-black text-gray-900">{step.value}</span>
-                                </div>
-                                <div className="h-4 bg-gray-50 border border-gray-100 rounded-full overflow-hidden shadow-inner flex">
-                                    <div
-                                        className={`h-full transition-all duration-1000 ease-out flex items-center justify-end pr-2`}
-                                        style={{
-                                            width: `${step.percent}%`,
-                                            background: `linear-gradient(90deg, #1d1dd7, #1d1dd7cc)`
-                                        }}
-                                    >
-                                        <span className="text-[8px] font-black text-white">{step.percent}%</span>
+                    <div className="flex flex-col items-center gap-4 relative">
+                        {funnelData.map((step, i) => {
+                            // Calculate width for funnel effect: 100%, 85%, 70%, 55%
+                            const stepWidth = 100 - (i * 15);
+                            return (
+                                <div key={step.name} className="w-full relative flex flex-col items-center group">
+                                    <div className="w-full flex justify-between items-end mb-2 px-1 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+                                        <span>{step.name}</span>
+                                        <span className="text-gray-900">{step.value}</span>
                                     </div>
-                                </div>
-                                {i < funnelData.length - 1 && (
-                                    <div className="flex justify-center -my-1 opacity-20">
-                                        <ArrowRight className="w-4 h-4 rotate-90 text-[#1d1dd7]" />
+
+                                    <div className="w-full h-12 bg-gray-50 rounded-2xl border border-gray-100 overflow-hidden relative shadow-inner">
+                                        <div
+                                            className="h-full transition-all duration-1000 ease-out flex items-center justify-center relative overflow-hidden"
+                                            style={{
+                                                width: `${stepWidth}%`,
+                                                margin: '0 auto',
+                                                background: `linear-gradient(135deg, ${step.color}, ${step.color}dd)`,
+                                                boxShadow: `0 4px 15px -3px ${step.color}44`
+                                            }}
+                                        >
+                                            {/* Glossy effect */}
+                                            <div className="absolute top-0 left-0 w-full h-1/2 bg-white/10" />
+                                            <span className="relative z-10 text-xs font-black text-white drop-shadow-md">
+                                                {step.percent}%
+                                            </span>
+                                        </div>
                                     </div>
-                                )}
-                            </div>
-                        ))}
+
+                                    {i < funnelData.length - 1 && (
+                                        <div className="flex flex-col items-center -my-2 opacity-30 z-20">
+                                            <div className="w-0.5 h-6 bg-gradient-to-b from-blue-600 to-transparent" />
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
 
@@ -293,9 +306,9 @@ export default function DashboardPage() {
                         <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-md border border-white/10">
                             <Coins className="w-8 h-8 text-yellow-300" />
                         </div>
-                        <h2 className="text-xl font-black uppercase tracking-tight mb-2 italic">ROI Estimé</h2>
+                        <h2 className="text-xl font-black uppercase tracking-tight mb-2 italic">Impact CA Estimé</h2>
                         <p className="text-white/60 text-xs font-medium uppercase tracking-widest mb-10 leading-relaxed italic">
-                            Chiffre d'affaires potentiel généré par vos coupons validés (Basé sur un ticket de 15€).
+                            Chiffre d'affaires potentiel généré par vos coupons validés (Basé sur votre panier moyen de {restaurant?.average_ticket || 15}€).
                         </p>
 
                         <div className="space-y-1 mb-8">

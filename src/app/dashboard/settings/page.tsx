@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Store, MapPin, Link as LinkIcon, Save, Loader2, AlertCircle, CheckCircle2, Upload, Image as ImageIcon, Palette, Bell, CreditCard, Zap } from 'lucide-react'
+import { Store, MapPin, Link as LinkIcon, Save, Loader2, AlertCircle, CheckCircle2, Upload, Image as ImageIcon, Palette, Bell, CreditCard, Zap, Coins } from 'lucide-react'
 import { loadStripe } from '@stripe/stripe-js'
 
 export default function SettingsPage() {
@@ -11,6 +11,7 @@ export default function SettingsPage() {
     const [googleLink, setGoogleLink] = useState('')
     const [logoUrl, setLogoUrl] = useState('')
     const [primaryColor, setPrimaryColor] = useState('#1d1dd7')
+    const [averageTicket, setAverageTicket] = useState('15')
     const [badBuzzAlerts, setBadBuzzAlerts] = useState(true)
     const [loading, setLoading] = useState(true)
     const [uploading, setUploading] = useState(false)
@@ -47,6 +48,7 @@ export default function SettingsPage() {
                 setGoogleLink(data.google_link || '')
                 setLogoUrl(data.logo_url || '')
                 setPrimaryColor(data.primary_color || '#1d1dd7')
+                setAverageTicket(data.average_ticket?.toString() || '15')
                 setBadBuzzAlerts(data.bad_buzz_alerts !== false)
 
                 // Fetch subscription
@@ -191,6 +193,7 @@ export default function SettingsPage() {
                     google_link: googleLink,
                     logo_url: logoUrl,
                     primary_color: primaryColor,
+                    average_ticket: parseFloat(averageTicket) || 15,
                     bad_buzz_alerts: badBuzzAlerts
                 })
                 .eq('user_id', user?.id)
@@ -260,6 +263,25 @@ export default function SettingsPage() {
                                 <div className="flex-1">
                                     <p className="text-sm font-bold text-gray-700">{primaryColor.toUpperCase()}</p>
                                     <p className="text-[10px] text-gray-400 font-medium uppercase tracking-widest">Utilisée pour les boutons et la roue.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">Panier Moyen (€)</label>
+                            <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                                <div className={`p-2 rounded-lg bg-yellow-50 text-yellow-600`}>
+                                    <Coins className="w-5 h-5" />
+                                </div>
+                                <div className="flex-1">
+                                    <input
+                                        type="number"
+                                        className="w-full bg-transparent border-0 focus:ring-0 outline-none font-bold text-gray-900"
+                                        value={averageTicket}
+                                        onChange={(e) => setAverageTicket(e.target.value)}
+                                        placeholder="15"
+                                    />
+                                    <p className="text-[10px] text-gray-400 font-medium uppercase tracking-widest">Utilisé pour estimer l'impact sur votre chiffre d'affaires.</p>
                                 </div>
                             </div>
                         </div>
