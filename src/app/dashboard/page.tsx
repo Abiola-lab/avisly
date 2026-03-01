@@ -12,6 +12,8 @@ import {
     TrendingUp,
     Loader2,
     AlertTriangle,
+    ArrowRight,
+    Coins,
     BellOff
 } from 'lucide-react'
 
@@ -20,6 +22,8 @@ export default function DashboardPage() {
     const [recentCoupons, setRecentCoupons] = useState<any[]>([])
     const [badBuzzSessions, setBadBuzzSessions] = useState<any[]>([])
     const [dailyStats, setDailyStats] = useState<any[]>([])
+    const [funnelData, setFunnelData] = useState<any[]>([])
+    const [roiData, setRoiData] = useState({ revenue: 0, customers: 0 })
     const [loading, setLoading] = useState(true)
     const [restaurant, setRestaurant] = useState<any>(null)
 
@@ -83,6 +87,18 @@ export default function DashboardPage() {
                 const ratingsAvg = ratingsCount > 0
                     ? (ratingsData!.reduce((acc, curr) => acc + (curr.rating || 0), 0) / ratingsCount).toFixed(1)
                     : '0.0'
+
+                // ROI Estimation (15€ average ticket)
+                const roiRevenue = (usedCoupons || 0) * 15
+                setRoiData({ revenue: roiRevenue, customers: usedCoupons || 0 })
+
+                // Funnel Calculation
+                setFunnelData([
+                    { name: 'Scans QR', value: scans || 0, percent: 100, color: 'blue' },
+                    { name: 'Jeux lancés', value: spins || 0, percent: scans ? Math.round(((spins || 0) / scans) * 100) : 0, color: 'purple' },
+                    { name: 'Notes reçues', value: ratingsCount, percent: spins ? Math.round((ratingsCount / spins) * 100) : 0, color: 'yellow' },
+                    { name: 'Clics Google', value: googleClicks || 0, percent: ratingsCount ? Math.round(((googleClicks || 0) / ratingsCount) * 100) : 0, color: 'indigo' },
+                ])
 
                 setStats([
                     { label: 'Scans QR', value: (scans || 0).toString(), icon: QrCode, color: 'blue' },
@@ -224,6 +240,79 @@ export default function DashboardPage() {
                         </div>
                     </div>
                 ))}
+            </div>
+
+            {/* ROI & Funnel Analysis */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Funnel Analysis */}
+                <div className="lg:col-span-2 bg-white p-8 md:p-10 rounded-[3rem] shadow-sm border border-gray-100">
+                    <div className="flex items-center justify-between mb-10">
+                        <div>
+                            <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight">Tunnel de Conversion</h2>
+                            <p className="text-sm text-gray-500 font-medium italic">Efficacité de votre parcours client</p>
+                        </div>
+                        <div className="bg-green-50 text-green-600 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border border-green-100 italic">
+                            {funnelData[3]?.percent}% de succès final
+                        </div>
+                    </div>
+
+                    <div className="space-y-6">
+                        {funnelData.map((step, i) => (
+                            <div key={step.name} className="relative">
+                                <div className="flex justify-between items-end mb-2 px-1">
+                                    <span className="text-xs font-black text-gray-400 uppercase tracking-widest">{step.name}</span>
+                                    <span className="text-sm font-black text-gray-900">{step.value}</span>
+                                </div>
+                                <div className="h-4 bg-gray-50 border border-gray-100 rounded-full overflow-hidden shadow-inner flex">
+                                    <div
+                                        className={`h-full transition-all duration-1000 ease-out flex items-center justify-end pr-2`}
+                                        style={{
+                                            width: `${step.percent}%`,
+                                            background: `linear-gradient(90deg, #1d1dd7, #1d1dd7cc)`
+                                        }}
+                                    >
+                                        <span className="text-[8px] font-black text-white">{step.percent}%</span>
+                                    </div>
+                                </div>
+                                {i < funnelData.length - 1 && (
+                                    <div className="flex justify-center -my-1 opacity-20">
+                                        <ArrowRight className="w-4 h-4 rotate-90 text-[#1d1dd7]" />
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* ROI Estimation */}
+                <div className="bg-gradient-to-br from-[#1d1dd7] to-[#0f0f8a] p-10 rounded-[3rem] text-white flex flex-col justify-between relative overflow-hidden shadow-2xl">
+                    <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+                    <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+
+                    <div className="relative">
+                        <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-md border border-white/10">
+                            <Coins className="w-8 h-8 text-yellow-300" />
+                        </div>
+                        <h2 className="text-xl font-black uppercase tracking-tight mb-2 italic">ROI Estimé</h2>
+                        <p className="text-white/60 text-xs font-medium uppercase tracking-widest mb-10 leading-relaxed italic">
+                            Chiffre d'affaires potentiel généré par vos coupons validés (Basé sur un ticket de 15€).
+                        </p>
+
+                        <div className="space-y-1 mb-8">
+                            <div className="text-5xl font-black tracking-tighter">{roiData.revenue}€</div>
+                            <div className="text-white/40 text-[10px] font-black uppercase tracking-widest">Encaissé par l'établissement</div>
+                        </div>
+
+                        <div className="flex items-center gap-3 px-4 py-3 bg-white/10 rounded-2xl border border-white/10 backdrop-blur-sm">
+                            <div className="text-2xl font-black">{roiData.customers}</div>
+                            <div className="text-[10px] font-black text-white/40 uppercase tracking-widest leading-none">Clients <br /> revenus</div>
+                        </div>
+                    </div>
+
+                    <button className="relative w-full mt-10 py-4 bg-white text-[#1d1dd7] rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl hover:scale-[1.02] active:scale-95 transition-all">
+                        Détails du Calcul
+                    </button>
+                </div>
             </div>
 
             {restaurant?.bad_buzz_alerts && badBuzzSessions.length > 0 && (

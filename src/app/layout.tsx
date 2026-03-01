@@ -31,6 +31,13 @@ export const viewport: Viewport = {
   themeColor: "#1d1dd7",
 };
 
+import { PHProvider } from "./providers";
+import dynamic from 'next/dynamic'
+
+const PostHogPageView = dynamic(() => import('./PostHogPageView'), {
+  ssr: false,
+})
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -38,11 +45,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr">
-      <body
-        className={`${inter.variable} font-sans antialiased`}
-      >
-        {children}
-      </body>
+      <PHProvider>
+        <body
+          className={`${inter.variable} font-sans antialiased`}
+        >
+          <PostHogPageView />
+          {children}
+        </body>
+      </PHProvider>
     </html>
   );
 }

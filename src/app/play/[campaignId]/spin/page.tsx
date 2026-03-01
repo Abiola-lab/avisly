@@ -7,6 +7,8 @@ import Wheel from '@/components/game/Wheel'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, Eye } from 'lucide-react'
 
+import { usePostHog } from 'posthog-js/react'
+
 export default function SpinPage() {
     const { campaignId } = useParams()
     const [rewards, setRewards] = useState<any[]>([])
@@ -17,6 +19,7 @@ export default function SpinPage() {
     const [palette, setPalette] = useState({ primary: '#1d1dd7', secondary: '#ff0080', accent: '#ffcc00' })
     const [showReveal, setShowReveal] = useState(false)
     const supabase = createClient()
+    const posthog = usePostHog()
     const router = useRouter()
 
     useEffect(() => {
@@ -52,6 +55,12 @@ export default function SpinPage() {
             router.push(`/play/${campaignId}`)
             return
         }
+
+        // Track spin start
+        posthog?.capture('spin_started', {
+            campaignId,
+            sessionId
+        })
 
         try {
             const res = await fetch('/api/game/spin', {

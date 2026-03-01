@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Star, ArrowRight } from 'lucide-react'
 
+import { usePostHog } from 'posthog-js/react'
+
 export default function RatePage() {
     const { campaignId } = useParams()
     const [rating, setRating] = useState(0)
@@ -12,12 +14,21 @@ export default function RatePage() {
     const [tableNumber, setTableNumber] = useState('')
     const [loading, setLoading] = useState(false)
     const router = useRouter()
+    const posthog = usePostHog()
 
     const handleSubmit = async () => {
         if (rating === 0) return
         setLoading(true)
 
         const sessionId = localStorage.getItem(`rv_sess_${campaignId}`)
+
+        // Track rating submission in PostHog
+        posthog?.capture('rating_submitted', {
+            campaignId,
+            sessionId,
+            rating,
+            hasFeedback: !!feedback
+        })
 
         try {
             const res = await fetch('/api/game/rate', {

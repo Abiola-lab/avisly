@@ -296,6 +296,21 @@ Index recommandés :
 
 ---
 
+---
+
+# 8️⃣ MODULE E — ANALYTICS ET PERFORMANCE (POST-MVP)
+
+- [ ] **Dashboard Client Avancé** :
+    - [ ] Calcul du ROI (Estimation des revenus basés sur l'usage).
+    - [ ] Visualisation en entonnoir (Funnel) de conversion : Scan ➔ Spin ➔ Note ➔ Clic Google.
+    - [ ] Taux d'abandon par étape.
+- [ ] **Suivi Produit (PostHog)** :
+    - [ ] Intégration du SDK PostHog (Session Replay, Heatmaps).
+    - [ ] Funnel d'analyse comportementale.
+    - [ ] Analyse de rétention sur le Dashboard Admin.
+
+---
+
 # 🎯 ALIGNEMENT AVEC PRD
 
 Ce document est aligné avec :

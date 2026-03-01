@@ -6,12 +6,15 @@ import { useParams } from 'next/navigation'
 import { Trophy, Clock, Check, ExternalLink } from 'lucide-react'
 import confetti from 'canvas-confetti'
 
+import { usePostHog } from 'posthog-js/react'
+
 export default function RewardPage() {
     const { campaignId } = useParams()
     const [data, setData] = useState<any>(null)
     const [timeLeft, setTimeLeft] = useState<number | null>(null)
     const [googleClicked, setGoogleClicked] = useState(false)
     const supabase = createClient()
+    const posthog = usePostHog()
 
     useEffect(() => {
         async function fetchReward() {
@@ -62,10 +65,19 @@ export default function RewardPage() {
         const sessionId = localStorage.getItem(`rv_sess_${campaignId}`)
         if (!sessionId) return
 
+        // Track Google click in Supabase
         await supabase.from('analytics_events').insert([{
             session_id: sessionId,
             event_type: 'google_clicked'
         }])
+
+        // Track in PostHog
+        posthog?.capture('google_clicked', {
+            campaignId,
+            sessionId,
+            reward: data?.rewards?.label,
+            rating: data?.rating
+        })
 
         setGoogleClicked(true)
         window.open(data?.campaigns?.restaurants?.google_link, '_blank')
