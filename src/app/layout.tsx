@@ -32,11 +32,7 @@ export const viewport: Viewport = {
 };
 
 import { PHProvider } from "./providers";
-import dynamic from 'next/dynamic'
-
-const PostHogPageView = dynamic(() => import('./PostHogPageView'), {
-  ssr: false,
-})
+import PostHogPageView from './PostHogPageView'
 
 export default function RootLayout({
   children,
