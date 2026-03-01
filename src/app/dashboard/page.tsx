@@ -52,18 +52,18 @@ export default function DashboardPage() {
                 .single()
 
             if (campaign) {
-                // Fetch real counts
+                // Fetch real counts using joins
                 const { count: scans } = await supabase
                     .from('analytics_events')
-                    .select('*', { count: 'exact', head: true })
+                    .select('id, sessions!inner(campaign_id)', { count: 'exact', head: true })
                     .eq('event_type', 'scan')
-                    .filter('session_id', 'in', `(select id from sessions where campaign_id = ${campaign.id})`)
+                    .eq('sessions.campaign_id', campaign.id)
 
                 const { count: spins } = await supabase
                     .from('analytics_events')
-                    .select('*', { count: 'exact', head: true })
+                    .select('id, sessions!inner(campaign_id)', { count: 'exact', head: true })
                     .eq('event_type', 'spin_completed')
-                    .filter('session_id', 'in', `(select id from sessions where campaign_id = ${campaign.id})`)
+                    .eq('sessions.campaign_id', campaign.id)
 
                 const { data: ratingsData } = await supabase
                     .from('sessions')
@@ -73,15 +73,15 @@ export default function DashboardPage() {
 
                 const { count: googleClicks } = await supabase
                     .from('analytics_events')
-                    .select('*', { count: 'exact', head: true })
+                    .select('id, sessions!inner(campaign_id)', { count: 'exact', head: true })
                     .eq('event_type', 'google_clicked')
-                    .filter('session_id', 'in', `(select id from sessions where campaign_id = ${campaign.id})`)
+                    .eq('sessions.campaign_id', campaign.id)
 
                 const { count: usedCoupons } = await supabase
                     .from('coupons')
-                    .select('*', { count: 'exact', head: true })
+                    .select('id, sessions!inner(campaign_id)', { count: 'exact', head: true })
                     .eq('status', 'used')
-                    .filter('session_id', 'in', `(select id from sessions where campaign_id = ${campaign.id})`)
+                    .eq('sessions.campaign_id', campaign.id)
 
                 const ratingsCount = ratingsData?.length || 0
                 const ratingsAvg = ratingsCount > 0
@@ -93,12 +93,28 @@ export default function DashboardPage() {
                 const roiRevenue = (usedCoupons || 0) * avgTicket
                 setRoiData({ revenue: roiRevenue, customers: usedCoupons || 0 })
 
-                // Funnel Calculation
+                // Funnel Calculation (Cumulative from Scans)
+                const scansCount = scans || 0
                 setFunnelData([
-                    { name: 'Scans QR', value: scans || 0, percent: 100, color: '#1d1dd7' },
-                    { name: 'Jeux lancés', value: spins || 0, percent: scans ? Math.round(((spins || 0) / scans) * 100) : 0, color: '#4f46e5' },
-                    { name: 'Notes reçues', value: ratingsCount, percent: spins ? Math.round((ratingsCount / spins) * 100) : 0, color: '#6366f1' },
-                    { name: 'Clics Google', value: googleClicks || 0, percent: ratingsCount ? Math.round(((googleClicks || 0) / ratingsCount) * 100) : 0, color: '#818cf8' },
+                    { name: 'Scans QR', value: scansCount, percent: 100, color: '#1d1dd7' },
+                    {
+                        name: 'Jeux lancés',
+                        value: spins || 0,
+                        percent: scansCount ? Math.round(((spins || 0) / scansCount) * 100) : 0,
+                        color: '#4f46e5'
+                    },
+                    {
+                        name: 'Notes reçues',
+                        value: ratingsCount,
+                        percent: scansCount ? Math.round((ratingsCount / scansCount) * 100) : 0,
+                        color: '#6366f1'
+                    },
+                    {
+                        name: 'Clics Google',
+                        value: googleClicks || 0,
+                        percent: scansCount ? Math.round(((googleClicks || 0) / scansCount) * 100) : 0,
+                        color: '#818cf8'
+                    },
                 ])
 
                 setStats([
@@ -132,9 +148,9 @@ export default function DashboardPage() {
 
                 const { data: dailyEvents } = await supabase
                     .from('analytics_events')
-                    .select('created_at, event_type')
+                    .select('created_at, event_type, sessions!inner(campaign_id)')
                     .eq('event_type', 'scan')
-                    .filter('session_id', 'in', `(select id from sessions where campaign_id = ${campaign.id})`)
+                    .eq('sessions.campaign_id', campaign.id)
                     .gt('created_at', sevenDaysAgo.toISOString())
 
                 // Process data for charts
@@ -272,7 +288,7 @@ export default function DashboardPage() {
                                         <div
                                             className="h-full transition-all duration-1000 ease-out flex items-center justify-center relative overflow-hidden"
                                             style={{
-                                                width: `${stepWidth}%`,
+                                                width: `${step.percent}%`,
                                                 margin: '0 auto',
                                                 background: `linear-gradient(135deg, ${step.color}, ${step.color}dd)`,
                                                 boxShadow: `0 4px 15px -3px ${step.color}44`
@@ -280,7 +296,7 @@ export default function DashboardPage() {
                                         >
                                             {/* Glossy effect */}
                                             <div className="absolute top-0 left-0 w-full h-1/2 bg-white/10" />
-                                            <span className="relative z-10 text-xs font-black text-white drop-shadow-md">
+                                            <span className="relative z-10 text-[10px] font-black text-white drop-shadow-md">
                                                 {step.percent}%
                                             </span>
                                         </div>
@@ -298,7 +314,7 @@ export default function DashboardPage() {
                 </div>
 
                 {/* ROI Estimation */}
-                <div className="bg-gradient-to-br from-[#1d1dd7] to-[#0f0f8a] p-10 rounded-[3rem] text-white flex flex-col justify-between relative overflow-hidden shadow-2xl">
+                <div className="bg-gradient-to-br from-[#1d1dd7] to-[#0f0f8a] p-10 rounded-[3rem] text-white flex flex-col justify-between relative shadow-2xl">
                     <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
                     <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
 
@@ -322,9 +338,38 @@ export default function DashboardPage() {
                         </div>
                     </div>
 
-                    <button className="relative w-full mt-10 py-4 bg-white text-[#1d1dd7] rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl hover:scale-[1.02] active:scale-95 transition-all">
-                        Détails du Calcul
-                    </button>
+                    <div className="group relative">
+                        <button className="w-full py-4 bg-white text-[#1d1dd7] rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] active:scale-95 transition-all outline-none">
+                            Détails du calcul
+                        </button>
+                        <div className="absolute bottom-full left-0 w-full mb-6 bg-gray-900/95 backdrop-blur-xl p-6 rounded-[2rem] text-white opacity-0 group-hover:opacity-100 transition-all pointer-events-none transform translate-y-4 group-hover:translate-y-0 shadow-2xl border border-white/10 z-50">
+                            <div className="space-y-4">
+                                <div>
+                                    <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">MÉTHODE : IMPACT CA</p>
+                                    <p className="text-xs text-white/70 leading-relaxed italic">
+                                        Estimation basée sur la conversion réelle en établissement.
+                                    </p>
+                                </div>
+                                <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                                    <div className="flex justify-between items-center text-sm font-bold mb-2">
+                                        <span className="text-white/40">Coupons validés</span>
+                                        <span>{roiData.customers}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-sm font-bold mb-4">
+                                        <span className="text-white/40">Panier moyen</span>
+                                        <span>{restaurant?.average_ticket || 15}€</span>
+                                    </div>
+                                    <div className="pt-4 border-t border-white/10 flex justify-between items-center text-lg font-black text-yellow-300 italic">
+                                        <span>TOTAL ESTIMÉ</span>
+                                        <span>{roiData.revenue}€</span>
+                                    </div>
+                                </div>
+                                <p className="text-[9px] text-white/30 italic text-center">
+                                    Note : Un coupon validé confirme la présence physique du client au comptoir.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
