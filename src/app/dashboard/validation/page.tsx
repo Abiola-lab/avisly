@@ -1,4 +1,7 @@
 'use client'
+/**
+ * Validation des coupons - Mise à jour de la validité à 48h
+ */
 
 import { useState } from 'react'
 import { TicketCheck, Search, CheckCircle2, XCircle, Loader2 } from 'lucide-react'
