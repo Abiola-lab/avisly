@@ -1,10 +1,11 @@
 'use client'
+// Triggering redeploy after internal vercel error
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Eye, EyeOff, Mail, CheckCircle2 } from 'lucide-react'
+import { Eye, EyeOff, Mail } from 'lucide-react'
 
 export default function RegisterPage() {
     const [email, setEmail] = useState('')
