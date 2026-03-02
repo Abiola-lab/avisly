@@ -262,6 +262,40 @@ export default function CampaignsPage() {
         }
     }
 
+    const handleDeleteCampaign = async (id: string) => {
+        if (!confirm('Supprimer définitivement ce modèle de campagne ? Cette action est irréversible.')) return
+
+        setSaving(true)
+        try {
+            const { error } = await supabase.from('campaigns').delete().eq('id', id)
+            if (error) throw error
+
+            const remaining = allCampaigns.filter(c => c.id !== id)
+            setAllCampaigns(remaining)
+
+            if (campaign?.id === id) {
+                const next = remaining[0]
+                setCampaign(next || null)
+                if (next) {
+                    const { data: fetchRewards } = await supabase
+                        .from('rewards')
+                        .select('*')
+                        .eq('campaign_id', next.id)
+                    setRewards(fetchRewards || [])
+                } else {
+                    setRewards([])
+                }
+            }
+            setStatus({ type: 'success', message: 'Modèle supprimé !' })
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Une erreur est survenue'
+            alert(message)
+        } finally {
+            setSaving(false)
+            setTimeout(() => setStatus(null), 3000)
+        }
+    }
+
     const onDragEnd = async (result: any) => {
         if (!result.destination) return
 
@@ -318,23 +352,46 @@ export default function CampaignsPage() {
             </div>
 
             {showNewModel && (
-                <div className="bg-white p-6 rounded-3xl border-2 border-dashed border-[#1d1dd7]/20 animate-in fade-in slide-in-from-top-4">
-                    <form onSubmit={createModel} className="flex gap-4">
-                        <input
-                            required
-                            type="text"
-                            placeholder="Nom du modèle (ex: Happy Hour, Noël...)"
-                            className="flex-1 px-5 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1d1dd7] outline-none font-bold placeholder-gray-500 text-gray-900"
-                            value={newCampaignName}
-                            onChange={(e) => setNewCampaignName(e.target.value)}
-                        />
-                        <button
-                            type="submit"
-                            className="bg-[#1d1dd7] text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-[#1d1dd7]/20"
-                        >
-                            Créer et configurer
-                        </button>
-                    </form>
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300"
+                    onClick={() => setShowNewModel(false)}
+                >
+                    <div
+                        className="bg-white p-8 rounded-[2.5rem] shadow-2xl w-full max-w-lg animate-in zoom-in-95 duration-300"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <h3 className="text-2xl font-black text-gray-900 mb-2 uppercase tracking-tight">Nouveau Modèle</h3>
+                        <p className="text-gray-500 font-medium text-sm mb-6 italic">Donnez un nom à votre nouvelle configuration de lot.</p>
+
+                        <form onSubmit={createModel} className="space-y-4">
+                            <input
+                                required
+                                autoFocus
+                                type="text"
+                                placeholder="ex: Offres Été 2024"
+                                className="w-full px-6 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-[#1d1dd7] focus:bg-white outline-none font-bold placeholder-gray-400 text-gray-900 transition-all font-sans"
+                                value={newCampaignName}
+                                onChange={(e) => setNewCampaignName(e.target.value)}
+                            />
+                            <div className="flex gap-3 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowNewModel(false)}
+                                    className="flex-1 py-4 bg-gray-100 text-gray-600 rounded-2xl font-bold hover:bg-gray-200 transition-all italic text-sm"
+                                >
+                                    Annuler
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={saving}
+                                    className="flex-[2] bg-[#1d1dd7] text-white py-4 rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-[#1515a3] transition-all disabled:opacity-50 shadow-xl shadow-[#1d1dd7]/30 uppercase tracking-widest text-sm"
+                                >
+                                    {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
+                                    Créer et configurer
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             )}
 
@@ -357,9 +414,20 @@ export default function CampaignsPage() {
                     >
                         <div className="flex justify-between items-start mb-4">
                             <h3 className="font-bold text-gray-900">{c.name}</h3>
-                            {c.is_active && (
-                                <span className="bg-green-100 text-green-700 text-[10px] font-black px-2 py-1 rounded-md uppercase tracking-widest">Actif</span>
-                            )}
+                            <div className="flex items-center gap-2">
+                                {c.is_active && (
+                                    <span className="bg-green-100 text-green-700 text-[10px] font-black px-2 py-1 rounded-md uppercase tracking-widest">Actif</span>
+                                )}
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        handleDeleteCampaign(c.id)
+                                    }}
+                                    className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            </div>
                         </div>
                         <p className="text-xs text-gray-500 font-medium lowercase mb-4">Créé le {new Date(c.created_at).toLocaleDateString()}</p>
 
