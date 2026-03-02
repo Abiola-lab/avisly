@@ -101,7 +101,7 @@ export default function ValidationPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600 font-medium">
                     <div className="flex gap-2">
                         <span className="text-[#1d1dd7]">●</span>
-                        Le code est valable 10 minutes après l'obtention.
+                        Le code est valable 48h après l'obtention.
                     </div>
                     <div className="flex gap-2">
                         <span className="text-[#1d1dd7]">●</span>
