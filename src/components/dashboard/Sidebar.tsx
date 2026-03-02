@@ -18,6 +18,7 @@ import {
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useNavigationGuard } from '@/lib/contexts/NavigationGuardContext'
 
 const menuItems = [
     { name: 'Tableau de bord', href: '/dashboard', icon: LayoutDashboard },
@@ -32,9 +33,28 @@ export default function Sidebar() {
     const pathname = usePathname()
     const router = useRouter()
     const supabase = createClient()
+    const { isDirty, setIsDirty } = useNavigationGuard()
     const [isOpen, setIsOpen] = useState(false)
 
+    const handleNav = (e: React.MouseEvent, href: string) => {
+        if (isDirty) {
+            e.preventDefault()
+            const confirmed = confirm('Vous avez des modifications non enregistrées sur cette page. Quitter quand même ?')
+            if (confirmed) {
+                setIsDirty(false)
+                router.push(href)
+                setIsOpen(false)
+            }
+            return
+        }
+        setIsOpen(false)
+    }
+
     const handleLogout = async () => {
+        if (isDirty) {
+            if (!confirm('Modifications non enregistrées ! Quitter quand même ?')) return
+            setIsDirty(false)
+        }
         await supabase.auth.signOut()
         router.push('/')
         router.refresh()
@@ -61,7 +81,7 @@ export default function Sidebar() {
                         <Link
                             key={item.href}
                             href={item.href}
-                            onClick={() => setIsOpen(false)}
+                            onClick={(e) => handleNav(e, item.href)}
                             className={`flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all ${isActive
                                 ? 'bg-[#f0f0ff] text-[#1d1dd7]'
                                 : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'

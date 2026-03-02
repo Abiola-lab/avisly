@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Store, MapPin, Link as LinkIcon, Save, Loader2, AlertCircle, CheckCircle2, Upload, Image as ImageIcon, Palette, Bell, CreditCard, Zap, Coins } from 'lucide-react'
+import { Store, MapPin, Link as LinkIcon, Save, Loader2, AlertCircle, CheckCircle2, Upload, Image as ImageIcon, Palette, Bell, CreditCard, Zap, Coins, Undo2 } from 'lucide-react'
 import { loadStripe } from '@stripe/stripe-js'
+import { useNavigationGuard } from '@/lib/contexts/NavigationGuardContext'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export default function SettingsPage() {
     const [name, setName] = useState('')
@@ -20,6 +22,7 @@ export default function SettingsPage() {
     const [subscription, setSubscription] = useState<any>(null)
     const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null)
     const [canDebug, setCanDebug] = useState(false)
+    const { setIsDirty, isDirty } = useNavigationGuard()
 
     const supabase = createClient()
 
@@ -75,6 +78,17 @@ export default function SettingsPage() {
 
         fetchSettings()
     }, [])
+
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (isDirty) {
+                e.preventDefault()
+                e.returnValue = ''
+            }
+        }
+        window.addEventListener('beforeunload', handleBeforeUnload)
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+    }, [isDirty])
 
     const handleSubscription = async (planType: 'monthly' | 'annual') => {
         setSubLoading(true)
@@ -169,6 +183,7 @@ export default function SettingsPage() {
                 .getPublicUrl(filePath)
 
             setLogoUrl(publicUrl)
+            setIsDirty(true)
             setStatus({ type: 'success', message: 'Logo téléchargé ! N\'oubliez pas de sauvegarder.' })
         } catch (err: any) {
             setStatus({ type: 'error', message: "Erreur d'upload : assurez-vous que le bucket 'logos' est créé en mode public." })
@@ -179,8 +194,8 @@ export default function SettingsPage() {
         }
     }
 
-    const handleSave = async (e: React.FormEvent) => {
-        e.preventDefault()
+    const handleSave = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault()
         setSaving(true)
 
         try {
@@ -199,6 +214,7 @@ export default function SettingsPage() {
                 .eq('user_id', user?.id)
 
             if (error) throw error
+            setIsDirty(false)
             setStatus({ type: 'success', message: 'Paramètres mis à jour !' })
         } catch (err: any) {
             setStatus({ type: 'error', message: err.message })
@@ -210,8 +226,12 @@ export default function SettingsPage() {
 
     if (loading) return <div className="p-8 text-center text-gray-500 font-medium">Chargement des paramètres...</div>
 
+    const handleResetLocal = () => {
+        window.location.reload()
+    }
+
     return (
-        <div className="space-y-6 md:space-y-8 max-w-2xl">
+        <div className="space-y-6 md:space-y-8 max-w-2xl pb-24">
             <div>
                 <h1 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">Paramètres de l'établissement</h1>
                 <p className="text-gray-500 font-medium text-sm md:text-base">Modifiez les informations de votre restaurant et votre lien Google.</p>
@@ -230,7 +250,10 @@ export default function SettingsPage() {
                                     className="w-full pl-10 pr-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1d1dd7] focus:border-transparent transition-all outline-none placeholder-gray-500 text-gray-900 font-bold"
                                     value={name}
                                     placeholder="ex: Le Petit Bistro"
-                                    onChange={(e) => setName(e.target.value)}
+                                    onChange={(e) => {
+                                        setName(e.target.value)
+                                        setIsDirty(true)
+                                    }}
                                 />
                             </div>
                         </div>
@@ -245,7 +268,28 @@ export default function SettingsPage() {
                                     className="w-full pl-10 pr-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1d1dd7] focus:border-transparent transition-all outline-none placeholder-gray-500 text-gray-900 font-bold"
                                     value={address}
                                     placeholder="8 rue de la Paix, Paris"
-                                    onChange={(e) => setAddress(e.target.value)}
+                                    onChange={(e) => {
+                                        setAddress(e.target.value)
+                                        setIsDirty(true)
+                                    }}
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">Lien Google Business</label>
+                            <div className="relative">
+                                <LinkIcon className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+                                <input
+                                    required
+                                    type="url"
+                                    className="w-full pl-10 pr-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#1d1dd7] focus:border-transparent transition-all outline-none placeholder-gray-400 text-gray-900 font-bold"
+                                    value={googleLink}
+                                    placeholder="https://g.page/r/your-id"
+                                    onChange={(e) => {
+                                        setGoogleLink(e.target.value)
+                                        setIsDirty(true)
+                                    }}
                                 />
                             </div>
                         </div>
@@ -258,7 +302,10 @@ export default function SettingsPage() {
                                     type="color"
                                     className="w-12 h-12 rounded-lg border-0 cursor-pointer bg-transparent"
                                     value={primaryColor}
-                                    onChange={(e) => setPrimaryColor(e.target.value)}
+                                    onChange={(e) => {
+                                        setPrimaryColor(e.target.value)
+                                        setIsDirty(true)
+                                    }}
                                 />
                                 <div className="flex-1">
                                     <p className="text-sm font-bold text-gray-700">{primaryColor.toUpperCase()}</p>
@@ -278,7 +325,10 @@ export default function SettingsPage() {
                                         type="number"
                                         className="w-full bg-transparent border-0 focus:ring-0 outline-none font-bold text-gray-900"
                                         value={averageTicket}
-                                        onChange={(e) => setAverageTicket(e.target.value)}
+                                        onChange={(e) => {
+                                            setAverageTicket(e.target.value)
+                                            setIsDirty(true)
+                                        }}
                                         placeholder="15"
                                     />
                                     <p className="text-[10px] text-gray-400 font-medium uppercase tracking-widest">Utilisé pour estimer l'impact sur votre chiffre d'affaires.</p>
@@ -303,7 +353,10 @@ export default function SettingsPage() {
                                         type="checkbox"
                                         className="sr-only peer"
                                         checked={badBuzzAlerts}
-                                        onChange={(e) => setBadBuzzAlerts(e.target.checked)}
+                                        onChange={(e) => {
+                                            setBadBuzzAlerts(e.target.checked)
+                                            setIsDirty(true)
+                                        }}
                                     />
                                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#1d1dd7]"></div>
                                 </div>
@@ -530,6 +583,41 @@ export default function SettingsPage() {
                     </div>
                 )}
             </div>
+
+            <AnimatePresence>
+                {isDirty && (
+                    <motion.div
+                        initial={{ y: 100, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: 100, opacity: 0 }}
+                        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] w-[90%] max-w-lg"
+                    >
+                        <div className="bg-gray-900 border border-white/10 p-4 rounded-3xl shadow-2xl flex items-center justify-between gap-4 backdrop-blur-xl">
+                            <div className="flex items-center gap-3 px-2">
+                                <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
+                                <p className="text-white text-sm font-bold italic">Modifications non enregistrées</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={handleResetLocal}
+                                    className="px-4 py-2 text-xs font-bold text-gray-400 hover:text-white transition-colors flex items-center gap-2"
+                                >
+                                    <Undo2 className="w-3 h-3" />
+                                    Réinitialiser
+                                </button>
+                                <button
+                                    onClick={handleSave}
+                                    disabled={saving}
+                                    className="bg-[#1d1dd7] text-white px-6 py-2 rounded-xl text-xs font-black shadow-lg shadow-[#1d1dd7]/30 hover:bg-[#1515a3] transition-all flex items-center gap-2"
+                                >
+                                    {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                                    ENREGISTRER
+                                </button>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     )
 }
