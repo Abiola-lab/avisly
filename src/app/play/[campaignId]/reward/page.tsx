@@ -13,6 +13,7 @@ export default function RewardPage() {
     const [data, setData] = useState<any>(null)
     const [timeLeft, setTimeLeft] = useState<number | null>(null)
     const [googleClicked, setGoogleClicked] = useState(false)
+    const [finished, setFinished] = useState(false)
     const supabase = createClient()
     const posthog = usePostHog()
 
@@ -80,6 +81,7 @@ export default function RewardPage() {
         })
 
         setGoogleClicked(true)
+        setFinished(true)
         window.open(data?.campaigns?.restaurants?.google_link, '_blank')
     }
 
@@ -95,7 +97,7 @@ export default function RewardPage() {
 
     if (!data) return <div className="text-white/70 text-center py-20">Récupération de votre gain...</div>
 
-    const isPositive = data.rating >= 4
+    const isPositive = data.rating >= 3
 
     return (
         <div className="flex-1 flex flex-col items-center justify-between py-8 text-white">
@@ -196,13 +198,47 @@ export default function RewardPage() {
                     </div>
                 )}
 
+                {/* Final redirection button */}
                 <button
-                    onClick={() => window.location.href = data?.campaigns?.restaurants?.google_link || '#'}
-                    className="w-full bg-white/10 text-white/70 py-4 rounded-[2rem] font-bold text-sm hover:bg-white/20 transition-all"
+                    onClick={() => {
+                        if (isPositive) {
+                            window.location.href = data?.campaigns?.restaurants?.google_link || '#'
+                        } else {
+                            // For bad ratings, simply go back to the welcome page or a thank you state
+                            setFinished(true)
+                        }
+                    }}
+                    className="w-full bg-white/10 text-white/70 py-4 rounded-[2rem] font-bold text-sm hover:bg-white/20 transition-all border border-white/5"
                 >
-                    FERMER
+                    {isPositive ? 'FERMER & LAISSER UN AVIS' : 'QUITTER'}
                 </button>
             </div>
+
+            {/* Final Overlay if finished */}
+            {finished && (
+                <div className="fixed inset-0 bg-[#0a0a0a]/95 backdrop-blur-md z-[100] flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-500">
+                    <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mb-6">
+                        <Check className="w-8 h-8 text-green-500" />
+                    </div>
+                    <h2 className="text-3xl font-black mb-2 italic">TERMINE !</h2>
+                    <p className="text-white/60 mb-8 italic leading-relaxed">
+                        Merci pour votre temps ! Votre participation a bien été enregistrée.
+                        {data?.rewards?.is_prize && (
+                            <span className="block mt-2 text-white font-bold">N'oubliez pas d'utiliser votre gain au comptoir ! 🎁</span>
+                        )}
+                    </p>
+
+                    <button
+                        onClick={() => {
+                            localStorage.removeItem(`rv_sess_${campaignId}`)
+                            window.location.href = `/play/${campaignId}`
+                        }}
+                        className="px-10 py-5 bg-white text-gray-900 rounded-full font-black text-sm uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-2xl"
+                    >
+                        FERMER
+                    </button>
+                </div>
+            )}
         </div>
     )
 }

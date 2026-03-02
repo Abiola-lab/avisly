@@ -4,12 +4,15 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { Eye, EyeOff, Mail, CheckCircle2 } from 'lucide-react'
 
 export default function RegisterPage() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [showPassword, setShowPassword] = useState(false)
+    const [isRegistered, setIsRegistered] = useState(false)
     const router = useRouter()
     const supabase = createClient()
 
@@ -28,14 +31,40 @@ export default function RegisterPage() {
             })
 
             if (error) throw error
-
-            alert('Inscription réussie ! Veuillez vérifier votre boîte mail pour confirmer votre compte.')
-            router.push('/login')
+            setIsRegistered(true)
         } catch (err: any) {
             setError(err.message)
         } finally {
             setLoading(false)
         }
+    }
+
+    if (isRegistered) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 font-sans">
+                <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-[3rem] shadow-xl text-center">
+                    <div className="w-20 h-20 bg-green-50 text-green-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm border border-green-100">
+                        <Mail className="w-10 h-10 animate-bounce" />
+                    </div>
+                    <h2 className="text-3xl font-black text-gray-900 tracking-tight">VÉRIFIEZ VOS MAILS ! 📧</h2>
+                    <p className="text-gray-500 font-medium text-lg italic leading-relaxed">
+                        Un lien de confirmation vient d'être envoyé à <span className="text-[#1d1dd7] font-black">{email}</span>.
+                    </p>
+                    <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100/50 text-left">
+                        <p className="text-sm text-gray-600 font-medium">
+                            <span className="font-black text-[#1d1dd7] mr-2 underline">Note :</span>
+                            Veuillez cliquer sur le lien dans l'email pour activer votre compte avant de vous connecter.
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => router.push('/login')}
+                        className="w-full bg-[#1d1dd7] text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#1515a3] transition-all shadow-xl"
+                    >
+                        RETOUR À LA CONNEXION
+                    </button>
+                </div>
+            </div>
+        )
     }
 
     return (
@@ -72,21 +101,28 @@ export default function RegisterPage() {
                         </div>
 
                         <div>
-                            <label htmlFor="password" className="block text-sm font-bold text-gray-700">
+                            <label htmlFor="password" title="password" className="block text-sm font-bold text-gray-700">
                                 Mot de passe
                             </label>
-                            <div className="mt-2 text-gray-900">
+                            <div className="mt-2 text-gray-900 relative">
                                 <input
                                     id="password"
                                     name="password"
-                                    type="password"
+                                    type={showPassword ? "text" : "password"}
                                     autoComplete="new-password"
                                     required
-                                    className="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-[#1d1dd7] focus:border-[#1d1dd7] transition-all"
+                                    className="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-[#1d1dd7] focus:border-[#1d1dd7] transition-all pr-12"
                                     placeholder="••••••••"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                 />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                                >
+                                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                </button>
                             </div>
                         </div>
                     </div>
