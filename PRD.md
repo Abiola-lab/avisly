@@ -51,6 +51,9 @@ Le produit propose :
 * **Gestion des probabilités** : Barre de réglage des probabilités de gain par lot.
 * **Studio Print évolué** : Format A5, modèles de templates et choix de 3 couleurs pour les affiches.
 * **Comptes Admin** : Rôles spécifiques pour tests sans restrictions.
+* **Expérience immersive (Haptique & Sons)** : Vibrations et effets sonores synchronisés avec la roue.
+* **Preuve Sociale (Social Proof)** : Notification dynamique des gains récents pour rassurer le client.
+* **Assistant de configuration (Wizard)** : Guide pas à pas pour les nouveaux restaurateurs.
 
 ---
 
@@ -87,11 +90,12 @@ Le produit propose :
 ## 5.2 Restaurateur Flow
 
 1. Inscription / Connexion.
-2. Onboarding restaurant.
-3. Création et configuration campagne.
-4. Téléchargement QR code.
-5. Suivi des statistiques.
-6. Validation des coupons.
+2. Assistant de configuration (Wizard) : Étapes guidées pour le profil, les cadeaux et le QR code.
+3. Onboarding restaurant complet.
+4. Création et configuration campagne.
+5. Téléchargement QR code.
+6. Suivi des statistiques.
+7. Validation des coupons.
 
 ---
 
@@ -129,6 +133,15 @@ Champs obligatoires :
 * Lien Google Business Profile.
 * Logo (optionnel MVP).
 * Couleur principale (optionnelle MVP).
+
+## Assistant de Configuration (Wizard)
+
+Interface guidée pour les nouveaux utilisateurs :
+
+* **Étape 1 : Identité** (Nom, Adresse, Google Link, Logo).
+* **Étape 2 : Récompenses** (Configuration de la roue et des probabilités).
+* **Étape 3 : Lancement** (Génération et téléchargement du QR Code).
+* **Barre de progression** visible en haut du dashboard tant que le setup n'est pas à 100%.
 
 ---
 
@@ -221,6 +234,8 @@ Contraintes :
 
 * Résultat déterminé côté serveur.
 * Animation front alignée sur résultat serveur.
+* **Haptique & Sons** : Vibration (10ms) à chaque cran, son de rotation et son de victoire.
+* **Social Proof** : Notification "pilule" en bas de l'écran affichant : *"N gains distribués aujourd'hui"*.
 * Reward stocké immédiatement en base.
 
 ---

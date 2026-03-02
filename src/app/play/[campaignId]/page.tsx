@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useParams, useRouter } from 'next/navigation'
 import { ArrowRight, Trophy } from 'lucide-react'
+import SocialProof from '@/components/game/SocialProof'
 
 export default function PlayLandingPage() {
     const { campaignId } = useParams()
@@ -81,6 +82,7 @@ export default function PlayLandingPage() {
 
     return (
         <div className="flex-1 flex flex-col items-center justify-between py-12 text-white">
+            <SocialProof campaignId={campaignId as string} />
             <div className="text-center space-y-4">
                 <div className="w-20 h-20 bg-white rounded-3xl mx-auto flex items-center justify-center shadow-2xl overflow-hidden">
                     {campaign?.restaurants?.logo_url ? (

@@ -14,8 +14,10 @@ import {
     AlertTriangle,
     ArrowRight,
     Coins,
-    BellOff
+    BellOff,
+    CheckCircle2
 } from 'lucide-react'
+import InstallationWizard from '@/components/dashboard/InstallationWizard'
 
 export default function DashboardPage() {
     const [stats, setStats] = useState<any[]>([])
@@ -26,6 +28,8 @@ export default function DashboardPage() {
     const [roiData, setRoiData] = useState({ revenue: 0, customers: 0 })
     const [loading, setLoading] = useState(true)
     const [restaurant, setRestaurant] = useState<any>(null)
+    const [rewardCount, setRewardCount] = useState(0)
+    const [activeCampaign, setActiveCampaign] = useState<any>(null)
 
     const supabase = createClient()
 
@@ -52,6 +56,16 @@ export default function DashboardPage() {
                 .single()
 
             if (campaign) {
+                setActiveCampaign(campaign)
+
+                // Fetch Reward Count
+                const { count: rCount } = await supabase
+                    .from('rewards')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('campaign_id', campaign.id)
+
+                setRewardCount(rCount || 0)
+
                 // Fetch real counts using joins
                 const { count: scans } = await supabase
                     .from('analytics_events')
@@ -219,6 +233,12 @@ export default function DashboardPage() {
                     <TrendingUp className="w-4 h-4" /> LIVE
                 </div>
             </div>
+
+            <InstallationWizard
+                restaurant={restaurant}
+                campaign={activeCampaign}
+                rewardCount={rewardCount}
+            />
 
             {/* Empty State / Call to Action if no stats yet */}
             {stats[0]?.value === '0' && stats[1]?.value === '0' && (

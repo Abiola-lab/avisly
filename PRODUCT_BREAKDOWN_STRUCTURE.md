@@ -43,12 +43,14 @@ Contenu :
 * Thème visuel dynamique (Couleur primaire)
 * Message principal
 * Bouton “Tourner la roue” (Style accordé à la marque)
+* **Social Proof (Floating Pill)** : Affichage dynamique des statistiques de gains récents.
 
 ---
 
 ## A3. Roulette
 
 * Animation visuelle front-end
+* **Haptique & Sons** : Vibration synchronisée (API `navigator.vibrate`) et audios de suspense.
 * Résultat déterminé uniquement côté serveur
 * Sélection aléatoire parmi les récompenses actives
 * Enregistrement immédiat du reward attribué en base
@@ -185,6 +187,13 @@ Champs :
 * Adresse
 * Lien Google Business
 * (Logo optionnel MVP)
+
+## C2.1 Assistant de Configuration (Quick Wizard)
+
+* Interface "Step-by-Step" au sommet du dashboard.
+* Étapes : 1. Profil ➔ 2. Roue ➔ 3. Impression QR.
+* Barre de progression temps-réel.
+* Animation de confetti au achèvement.
 
 Création automatique première campagne.
 

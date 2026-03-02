@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react'
-import { motion, useAnimation, AnimatePresence } from 'framer-motion'
+import { motion, useAnimation, AnimatePresence, useMotionValue, animate } from 'framer-motion'
 import {
     Coffee,
     Utensils,
@@ -22,7 +22,9 @@ interface WheelProps {
 
 export default function Wheel({ segments, winnerIndex, onFinished, logoUrl, colors }: WheelProps) {
     const [mustSpin, setMustSpin] = useState(false)
-    const controls = useAnimation()
+    const rotation = useMotionValue(0)
+    const lastTickRef = useRef(0)
+    const audioContextRef = useRef<AudioContext | null>(null)
 
     const numSegments = segments.length
     const segmentAngle = 360 / numSegments
@@ -33,6 +35,67 @@ export default function Wheel({ segments, winnerIndex, onFinished, logoUrl, colo
         colors?.accent || '#ffcc00'
     ]
 
+    const getAudioContext = () => {
+        if (typeof window === 'undefined') return null
+        if (!audioContextRef.current) {
+            audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)()
+        }
+        return audioContextRef.current
+    }
+
+    const playTick = () => {
+        const context = getAudioContext()
+        if (!context) return
+        try {
+            if (context.state === 'suspended') context.resume()
+            const osc = context.createOscillator()
+            const gain = context.createGain()
+
+            osc.type = 'sine'
+            osc.frequency.setValueAtTime(150, context.currentTime)
+            osc.frequency.exponentialRampToValueAtTime(40, context.currentTime + 0.1)
+
+            gain.gain.setValueAtTime(0.05, context.currentTime)
+            gain.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.1)
+
+            osc.connect(gain)
+            gain.connect(context.destination)
+
+            osc.start()
+            osc.stop(context.currentTime + 0.1)
+
+            if (navigator.vibrate) navigator.vibrate(10)
+        } catch (e) { }
+    }
+
+    const playWin = () => {
+        const context = getAudioContext()
+        if (!context) return
+        try {
+            if (context.state === 'suspended') context.resume()
+            const tones = [523.25, 659.25, 783.99, 1046.50] // C5, E5, G5, C6
+            tones.forEach((freq, i) => {
+                const osc = context.createOscillator()
+                const gain = context.createGain()
+
+                osc.type = 'triangle'
+                osc.frequency.setValueAtTime(freq, context.currentTime + i * 0.1)
+
+                gain.gain.setValueAtTime(0, context.currentTime + i * 0.1)
+                gain.gain.linearRampToValueAtTime(0.1, context.currentTime + i * 0.1 + 0.05)
+                gain.gain.linearRampToValueAtTime(0, context.currentTime + i * 0.1 + 0.3)
+
+                osc.connect(gain)
+                gain.connect(context.destination)
+
+                osc.start(context.currentTime + i * 0.1)
+                osc.stop(context.currentTime + i * 0.1 + 0.3)
+            })
+
+            if (navigator.vibrate) navigator.vibrate([50, 50, 100])
+        } catch (e) { }
+    }
+
     useEffect(() => {
         if (winnerIndex !== null && !mustSpin) {
             setMustSpin(true)
@@ -41,21 +104,22 @@ export default function Wheel({ segments, winnerIndex, onFinished, logoUrl, colo
     }, [winnerIndex])
 
     const startSpinning = async () => {
-        // Multiple full rotations + exact offset to land on winnerIndex
-        // The pointer is at the top (0 deg). 
-        // Index 0 in the map starts at 0 deg, but rotates clockwise.
-        // We want the winnerIndex segment to land at 0 deg.
         const extraRotations = 360 * 8
         const finalRotation = extraRotations + (360 - (winnerIndex! * segmentAngle)) - (segmentAngle / 2)
 
-        await controls.start({
-            rotate: finalRotation,
-            transition: {
-                duration: 6,
-                ease: [0.15, 0, 0.1, 1],
-            },
+        await animate(rotation, finalRotation, {
+            duration: 6,
+            ease: [0.15, 0, 0.1, 1],
+            onUpdate: (latest) => {
+                const currentSegment = Math.floor(latest / segmentAngle)
+                if (currentSegment !== lastTickRef.current) {
+                    lastTickRef.current = currentSegment
+                    playTick()
+                }
+            }
         })
 
+        playWin()
         onFinished()
     }
 
@@ -89,9 +153,9 @@ export default function Wheel({ segments, winnerIndex, onFinished, logoUrl, colo
 
             {/* The Wheel */}
             <motion.div
-                animate={controls}
                 className="w-full h-full rounded-full border-[8px] border-yellow-600 shadow-[0_0_50px_rgba(0,0,0,0.5)] relative z-10 overflow-hidden"
                 style={{
+                    rotate: rotation,
                     background: `conic-gradient(${segments.map((s, i) => {
                         const color = s.color || palette[i % palette.length];
                         const start = i * segmentAngle;
