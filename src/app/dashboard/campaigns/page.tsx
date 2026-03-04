@@ -539,7 +539,7 @@ export default function CampaignsPage() {
                                 <input
                                     autoFocus
                                     type="text"
-                                    className="flex-1 text-xl font-bold text-gray-900 bg-white border border-gray-300 rounded-lg px-3 py-1 outline-none focus:ring-2 focus:ring-[#1d1dd7]"
+                                    className="flex-1 text-xl font-black text-gray-900 bg-white border-2 border-[#1d1dd7] rounded-xl px-4 py-2 outline-none shadow-lg shadow-[#1d1dd7]/10"
                                     value={editedCampaignName}
                                     onChange={(e) => setEditedCampaignName(e.target.value)}
                                     onKeyDown={(e) => {
@@ -616,10 +616,10 @@ export default function CampaignsPage() {
                                                                         <input
                                                                             autoFocus
                                                                             type="text"
-                                                                            className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-bold"
+                                                                            className="flex-1 px-4 py-2 bg-white border-2 border-[#1d1dd7] rounded-xl text-sm font-black text-gray-900 outline-none shadow-sm placeholder-gray-400"
                                                                             value={editLabel}
                                                                             onChange={(e) => setEditLabel(e.target.value)}
-                                                                            placeholder="Libellé..."
+                                                                            placeholder="Nom du lot..."
                                                                         />
                                                                         <input
                                                                             type="color"
@@ -634,9 +634,9 @@ export default function CampaignsPage() {
                                                                                 type="checkbox"
                                                                                 checked={editIsPrize}
                                                                                 onChange={(e) => setEditIsPrize(e.target.checked)}
-                                                                                className="rounded border-gray-300 text-[#1d1dd7] focus:ring-[#1d1dd7]"
+                                                                                className="rounded border-gray-400 text-[#1d1dd7] focus:ring-[#1d1dd7] w-5 h-5"
                                                                             />
-                                                                            <span className="text-[10px] font-bold uppercase text-gray-400">Prix</span>
+                                                                            <span className="text-xs font-black uppercase text-gray-700">Lot gagnant</span>
                                                                         </label>
                                                                         <div className="flex items-center gap-2 ml-auto">
                                                                             <button
