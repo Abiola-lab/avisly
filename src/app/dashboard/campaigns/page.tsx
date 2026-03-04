@@ -57,6 +57,10 @@ export default function CampaignsPage() {
     const [editColor, setEditColor] = useState('')
     const [editIsPrize, setEditIsPrize] = useState(true)
 
+    // Edit campaign state
+    const [isEditingCampaignName, setIsEditingCampaignName] = useState(false)
+    const [editedCampaignName, setEditedCampaignName] = useState('')
+
     const supabase = createClient()
 
     const fetchData = useCallback(async () => {
@@ -172,26 +176,58 @@ export default function CampaignsPage() {
         }
     }
 
+    const handleUpdateCampaignName = async () => {
+        if (!campaign || !editedCampaignName.trim()) return
+        setSaving(true)
+        try {
+            const { error } = await supabase
+                .from('campaigns')
+                .update({ name: editedCampaignName })
+                .eq('id', campaign.id)
+
+            if (error) throw error
+
+            setCampaign({ ...campaign, name: editedCampaignName })
+            setAllCampaigns(allCampaigns.map(c => c.id === campaign.id ? { ...c, name: editedCampaignName } : c))
+            setIsEditingCampaignName(false)
+            setStatus({ type: 'success', message: 'Nom du modèle mis à jour !' })
+        } catch (err: any) {
+            alert(err instanceof Error ? err.message : 'Une erreur est survenue')
+        } finally {
+            setSaving(false)
+            setTimeout(() => setStatus(null), 3000)
+        }
+    }
+
     const switchCampaign = async (id: string) => {
         setSaving(true)
         try {
-            // 1. Deactivate current active
+            const { data: { user } } = await supabase.auth.getUser()
+            const { data: restaurant } = await supabase
+                .from('restaurants')
+                .select('id')
+                .eq('user_id', user?.id)
+                .single()
+
+            if (!restaurant) throw new Error('Restaurant non trouvé')
+
+            // 1. Deactivate all for this restaurant
             await supabase
                 .from('campaigns')
                 .update({ is_active: false })
-                .eq('restaurant_id', campaign?.restaurant_id)
+                .eq('restaurant_id', restaurant.id)
 
-            // 2. Activate new one
-            await supabase
+            // 2. Activate specific one
+            const { error } = await supabase
                 .from('campaigns')
                 .update({ is_active: true })
                 .eq('id', id)
 
+            if (error) throw error
             await fetchData()
-            setStatus({ type: 'success', message: 'Modèle activé !' })
-        } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : 'Une erreur est survenue'
-            alert(message)
+            setStatus({ type: 'success', message: 'Campagne activée sur le QR Code !' })
+        } catch (err: any) {
+            alert(err instanceof Error ? err.message : 'Une erreur est survenue')
         } finally {
             setSaving(false)
             setTimeout(() => setStatus(null), 3000)
@@ -497,9 +533,49 @@ export default function CampaignsPage() {
 
             {campaign && (
                 <div className="flex items-center justify-between">
-                    <div>
-                        <h2 className="text-xl font-bold text-gray-900">Modification : {campaign.name}</h2>
-                        <p className="text-gray-500 text-sm font-medium">Éditez les lots de ce modèle spécifique.</p>
+                    <div className="flex-1">
+                        {isEditingCampaignName ? (
+                            <div className="flex items-center gap-2 max-w-md">
+                                <input
+                                    autoFocus
+                                    type="text"
+                                    className="flex-1 text-xl font-bold text-gray-900 bg-white border border-gray-300 rounded-lg px-3 py-1 outline-none focus:ring-2 focus:ring-[#1d1dd7]"
+                                    value={editedCampaignName}
+                                    onChange={(e) => setEditedCampaignName(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') handleUpdateCampaignName()
+                                        if (e.key === 'Escape') setIsEditingCampaignName(false)
+                                    }}
+                                />
+                                <button
+                                    onClick={handleUpdateCampaignName}
+                                    className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-all"
+                                >
+                                    <Check className="w-5 h-5" />
+                                </button>
+                                <button
+                                    onClick={() => setIsEditingCampaignName(false)}
+                                    className="p-2 text-gray-400 hover:bg-gray-100 rounded-lg transition-all"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-3">
+                                <h2 className="text-xl font-bold text-gray-900 leading-none">Modification : {campaign.name}</h2>
+                                <button
+                                    onClick={() => {
+                                        setIsEditingCampaignName(true)
+                                        setEditedCampaignName(campaign.name)
+                                    }}
+                                    className="p-1.5 text-gray-400 hover:text-[#1d1dd7] hover:bg-gray-50 rounded-lg transition-all group"
+                                    title="Renommer le modèle"
+                                >
+                                    <Edit className="w-4 h-4" />
+                                </button>
+                            </div>
+                        )}
+                        <p className="text-gray-500 text-sm font-medium mt-1">Éditez les lots de ce modèle spécifique.</p>
                     </div>
                 </div>
             )}
@@ -538,6 +614,7 @@ export default function CampaignsPage() {
                                                                 <div className="flex-1 flex flex-col sm:flex-row items-center gap-4">
                                                                     <div className="flex-1 flex items-center gap-2 w-full">
                                                                         <input
+                                                                            autoFocus
                                                                             type="text"
                                                                             className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-bold"
                                                                             value={editLabel}
