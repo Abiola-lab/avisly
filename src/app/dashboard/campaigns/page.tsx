@@ -9,7 +9,10 @@ import {
     Loader2,
     AlertCircle,
     CheckCircle2,
-    GripVertical
+    GripVertical,
+    Edit,
+    X,
+    Check
 } from 'lucide-react'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 
@@ -47,6 +50,13 @@ export default function CampaignsPage() {
     const [newCampaignName, setNewCampaignName] = useState('')
     const [showNewModel, setShowNewModel] = useState(false)
     const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null)
+
+    // Edit reward state
+    const [editingRewardId, setEditingRewardId] = useState<string | null>(null)
+    const [editLabel, setEditLabel] = useState('')
+    const [editColor, setEditColor] = useState('')
+    const [editIsPrize, setEditIsPrize] = useState(true)
+
     const supabase = createClient()
 
     const fetchData = useCallback(async () => {
@@ -133,6 +143,32 @@ export default function CampaignsPage() {
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : 'Une erreur est survenue'
             alert(message)
+        }
+    }
+
+    const handleUpdateReward = async (id: string) => {
+        setSaving(true)
+        try {
+            const { error } = await supabase
+                .from('rewards')
+                .update({
+                    label: editLabel,
+                    color: editColor,
+                    is_prize: editIsPrize
+                })
+                .eq('id', id)
+
+            if (error) throw error
+
+            setRewards(rewards.map(r => r.id === id ? { ...r, label: editLabel, color: editColor, is_prize: editIsPrize } : r))
+            setEditingRewardId(null)
+            setStatus({ type: 'success', message: 'Récompense mise à jour !' })
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Une erreur est survenue'
+            alert(message)
+        } finally {
+            setSaving(false)
+            setTimeout(() => setStatus(null), 3000)
         }
     }
 
@@ -498,27 +534,87 @@ export default function CampaignsPage() {
                                                             className={`group flex items-center justify-between p-4 bg-gray-50 hover:bg-white hover:shadow-md hover:border-gray-200 border border-transparent rounded-2xl transition-all ${snapshot.isDragging ? 'bg-white shadow-xl scale-[1.02] border-[#1d1dd7]/30 z-50' : ''
                                                                 }`}
                                                         >
-                                                            <div className="flex items-center gap-3">
-                                                                <div
-                                                                    {...provided.dragHandleProps}
-                                                                    className="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500"
-                                                                >
-                                                                    <GripVertical className="w-5 h-5" />
+                                                            {editingRewardId === reward.id ? (
+                                                                <div className="flex-1 flex flex-col sm:flex-row items-center gap-4">
+                                                                    <div className="flex-1 flex items-center gap-2 w-full">
+                                                                        <input
+                                                                            type="text"
+                                                                            className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-bold"
+                                                                            value={editLabel}
+                                                                            onChange={(e) => setEditLabel(e.target.value)}
+                                                                            placeholder="Libellé..."
+                                                                        />
+                                                                        <input
+                                                                            type="color"
+                                                                            className="w-10 h-10 p-1 bg-white border border-gray-300 rounded-lg cursor-pointer"
+                                                                            value={editColor}
+                                                                            onChange={(e) => setEditColor(e.target.value)}
+                                                                        />
+                                                                    </div>
+                                                                    <div className="flex items-center gap-4 w-full sm:w-auto">
+                                                                        <label className="flex items-center gap-2 cursor-pointer">
+                                                                            <input
+                                                                                type="checkbox"
+                                                                                checked={editIsPrize}
+                                                                                onChange={(e) => setEditIsPrize(e.target.checked)}
+                                                                                className="rounded border-gray-300 text-[#1d1dd7] focus:ring-[#1d1dd7]"
+                                                                            />
+                                                                            <span className="text-[10px] font-bold uppercase text-gray-400">Prix</span>
+                                                                        </label>
+                                                                        <div className="flex items-center gap-2 ml-auto">
+                                                                            <button
+                                                                                onClick={() => handleUpdateReward(reward.id)}
+                                                                                className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-all"
+                                                                            >
+                                                                                <Check className="w-5 h-5" />
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => setEditingRewardId(null)}
+                                                                                className="p-2 text-gray-400 hover:bg-gray-100 rounded-lg transition-all"
+                                                                            >
+                                                                                <X className="w-5 h-5" />
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
-                                                                <div className="w-4 h-4 rounded-full" style={{ backgroundColor: reward.color }} />
-                                                                <span className="font-bold text-gray-700">{reward.label || <span className="text-gray-300 font-normal italic">Sans texte</span>}</span>
-                                                                {reward.is_prize ? (
-                                                                    <span className="bg-green-100 text-green-700 text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-tighter">Prix</span>
-                                                                ) : (
-                                                                    <span className="bg-gray-200 text-gray-500 text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-tighter">Filler</span>
-                                                                )}
-                                                            </div>
-                                                            <button
-                                                                onClick={() => handleDeleteReward(reward.id)}
-                                                                className="p-2 text-gray-400 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"
-                                                            >
-                                                                <Trash2 className="w-5 h-5" />
-                                                            </button>
+                                                            ) : (
+                                                                <>
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div
+                                                                            {...provided.dragHandleProps}
+                                                                            className="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500"
+                                                                        >
+                                                                            <GripVertical className="w-5 h-5" />
+                                                                        </div>
+                                                                        <div className="w-4 h-4 rounded-full" style={{ backgroundColor: reward.color }} />
+                                                                        <span className="font-bold text-gray-700">{reward.label || <span className="text-gray-300 font-normal italic">Sans texte</span>}</span>
+                                                                        {reward.is_prize ? (
+                                                                            <span className="bg-green-100 text-green-700 text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-tighter">Prix</span>
+                                                                        ) : (
+                                                                            <span className="bg-gray-200 text-gray-500 text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-tighter">Filler</span>
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                setEditingRewardId(reward.id)
+                                                                                setEditLabel(reward.label || '')
+                                                                                setEditColor(reward.color || '#1d1dd7')
+                                                                                setEditIsPrize(reward.is_prize)
+                                                                            }}
+                                                                            className="p-2 text-gray-400 hover:text-[#1d1dd7] hover:bg-[#f0f0ff] rounded-lg transition-all"
+                                                                        >
+                                                                            <Edit className="w-5 h-5" />
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => handleDeleteReward(reward.id)}
+                                                                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                                                        >
+                                                                            <Trash2 className="w-5 h-5" />
+                                                                        </button>
+                                                                    </div>
+                                                                </>
+                                                            )}
                                                         </div>
                                                     )}
                                                 </Draggable>
