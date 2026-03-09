@@ -29,10 +29,14 @@ export default function Wheel({ segments, winnerIndex, onFinished, logoUrl, colo
     const numSegments = segments.length
     const segmentAngle = 360 / numSegments
 
-    const palette = [
-        colors?.primary || '#1d1dd7',
-        colors?.secondary || '#ff0080',
-        colors?.accent || '#ffcc00'
+    const palette = colors ? [
+        colors.primary,
+        colors.secondary,
+        colors.accent,
+        '#8B5CF6', '#EC4899', '#10B981', '#F59E0B', '#3B82F6', '#EF4444'
+    ] : [
+        '#1d1dd7', '#ff0080', '#ffcc00', '#00d4ff', '#00ff88',
+        '#ff6600', '#9d00ff', '#ff0000', '#0088ff', '#ff00ff'
     ]
 
     const getAudioContext = () => {
@@ -165,9 +169,12 @@ export default function Wheel({ segments, winnerIndex, onFinished, logoUrl, colo
                 }}
             >
                 {segments.map((s, i) => {
+                    const getLuminance = (hex: string) => {
+                        const rgb = hex.replace(/^#/, '').match(/.{2}/g)?.map(x => parseInt(x, 16)) || [0, 0, 0];
+                        return (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) / 255;
+                    };
                     const backgroundColor = s.color || palette[i % palette.length];
-                    const isLight = ['#ffffff', '#ffcc00', '#fef08a', '#facc15', '#fff'].includes(backgroundColor.toLowerCase());
-                    const textColor = isLight ? '#000000' : '#ffffff';
+                    const textColor = getLuminance(backgroundColor) > 0.6 ? '#000000' : '#ffffff';
 
                     // Aligner avec le conic-gradient (qui commence à 12h, donc -90deg par rapport au rotate standard)
                     const midAngle = (i * segmentAngle) + (segmentAngle / 2) - 90;

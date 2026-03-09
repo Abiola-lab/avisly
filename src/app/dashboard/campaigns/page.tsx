@@ -125,6 +125,14 @@ export default function CampaignsPage() {
             await fetchData()
             setNewRewardLabel('')
             setIsPrize(true)
+
+            // Suggest a new color for the next reward (automatic color rotation)
+            const wheelPalette = [
+                '#1d1dd7', '#ff0080', '#ffcc00', '#00d4ff', '#00ff88',
+                '#ff6600', '#9d00ff', '#ff0000', '#0088ff', '#ff00ff'
+            ]
+            setNewRewardColor(wheelPalette[(rewards.length + 1) % wheelPalette.length])
+
             setStatus({ type: 'success', message: 'Récompense ajoutée !' })
         } catch (err: unknown) {
             console.error('Error adding reward:', err)
