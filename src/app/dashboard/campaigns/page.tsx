@@ -15,6 +15,7 @@ import {
     Check
 } from 'lucide-react'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
+import Wheel from '@/components/game/Wheel'
 
 interface Campaign {
     id: string
@@ -40,6 +41,7 @@ interface Reward {
 
 export default function CampaignsPage() {
     const [campaign, setCampaign] = useState<Campaign | null>(null)
+    const [restaurantSettings, setRestaurantSettings] = useState<{ id: string, logo_url: string | null, primary_color: string | null } | null>(null)
     const [allCampaigns, setAllCampaigns] = useState<Campaign[]>([])
     const [rewards, setRewards] = useState<Reward[]>([])
     const [loading, setLoading] = useState(true)
@@ -69,11 +71,12 @@ export default function CampaignsPage() {
 
         const { data: restaurant } = await supabase
             .from('restaurants')
-            .select('id')
+            .select('id, logo_url, primary_color')
             .eq('user_id', user.id)
             .single()
 
         if (restaurant) {
+            setRestaurantSettings(restaurant as any)
             const { data: campaigns } = await supabase
                 .from('campaigns')
                 .select('*')
@@ -768,8 +771,44 @@ export default function CampaignsPage() {
                     </div>
                 </div>
 
-                {/* Right column: Info/Rules */}
+                {/* Right column: Info/Rules & Preview */}
                 <div className="space-y-6">
+                    <div className="bg-[#0f1115] p-6 sm:p-8 rounded-[2.5rem] shadow-xl text-white flex flex-col items-center relative overflow-hidden">
+                        {/* Soft Glow effect */}
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full blur-[80px] opacity-30 z-0" style={{ background: campaign?.color_primary || restaurantSettings?.primary_color || '#1d1dd7' }} />
+
+                        <div className="w-full flex justify-between items-center relative z-10 mb-2">
+                            <h4 className="text-[11px] font-black text-white/50 uppercase tracking-[0.2em]">Aperçu en direct</h4>
+                            <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10 relative z-10">
+                                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_#22c55e]" />
+                                <span className="text-[9px] font-bold text-white/70 uppercase tracking-widest">Live</span>
+                            </div>
+                        </div>
+
+                        <div className="relative z-10 w-full flex items-center justify-center pt-6 pb-2">
+                            <div className="transform-gpu scale-[0.65] sm:scale-[0.75] origin-center -my-14 sm:-my-10 shrink-0">
+                                {rewards.length > 0 ? (
+                                    <Wheel
+                                        segments={rewards.map(r => ({ label: r.label, color: r.color, is_prize: r.is_prize }))}
+                                        winnerIndex={null}
+                                        onFinished={() => { }}
+                                        logoUrl={restaurantSettings?.logo_url || undefined}
+                                        colors={{
+                                            primary: campaign?.color_primary || restaurantSettings?.primary_color || '#1d1dd7',
+                                            secondary: campaign?.color_secondary || '#ff0080',
+                                            accent: campaign?.color_accent || '#ffcc00'
+                                        }}
+                                    />
+                                ) : (
+                                    <div className="w-80 h-80 rounded-full border-[6px] border-dashed border-white/10 flex flex-col items-center justify-center opacity-70 relative z-10">
+                                        <div className="w-14 h-14 bg-white/5 rounded-full mb-4 animate-pulse" />
+                                        <span className="text-xs font-bold uppercase tracking-widest text-center px-8 text-white/50">Ajoutez des lots</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
                     <div className="bg-gray-900 p-8 rounded-[2.5rem] shadow-xl text-white space-y-6">
                         <div className="space-y-4">
                             <div className="flex justify-between items-center gap-4">
