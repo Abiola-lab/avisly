@@ -12,12 +12,196 @@ import {
     TrendingUp,
     Loader2,
     AlertTriangle,
-    ArrowRight,
     Coins,
-    BellOff,
-    CheckCircle2
+    CheckCircle2,
+    ArrowRight,
+    CreditCard,
+    Circle,
 } from 'lucide-react'
 import InstallationWizard from '@/components/dashboard/InstallationWizard'
+import { usePlanFeature } from '@/lib/contexts/PlanContext'
+import Link from 'next/link'
+
+function StatCard({ label, value, icon: Icon, accent = false }: {
+    label: string
+    value: string
+    icon: React.ElementType
+    accent?: boolean
+}) {
+    return (
+        <div className="rounded-xl border p-5 flex flex-col gap-4" style={{
+            background: 'var(--bg-surface)',
+            borderColor: 'var(--border)',
+        }}>
+            <div className="flex items-start justify-between">
+                <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--text-faint)' }}>
+                    {label}
+                </p>
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ background: accent ? 'var(--accent-light)' : 'var(--bg-subtle)' }}>
+                    <Icon className="w-3.5 h-3.5" style={{ color: accent ? 'var(--accent)' : 'var(--text-muted)' }} />
+                </div>
+            </div>
+            <p className="text-3xl font-bold tracking-tight" style={{ color: 'var(--text)' }}>
+                {value}
+            </p>
+        </div>
+    )
+}
+
+function ActivityFeed({ coupons }: { coupons: any[] }) {
+    if (coupons.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center h-32 text-center">
+                <Circle className="w-6 h-6 mb-2" style={{ color: 'var(--text-faint)' }} />
+                <p className="text-xs" style={{ color: 'var(--text-faint)' }}>Aucune activité récente</p>
+            </div>
+        )
+    }
+
+    return (
+        <div className="space-y-1">
+            {coupons.map((coupon) => {
+                const isUsed = coupon.status === 'used'
+                const isExpired = coupon.status === 'expired'
+                const timeAgo = (() => {
+                    const diff = Date.now() - new Date(coupon.created_at).getTime()
+                    const hours = Math.floor(diff / 3600000)
+                    const days = Math.floor(hours / 24)
+                    if (days > 0) return `${days}j`
+                    if (hours > 0) return `${hours}h`
+                    return 'maintenant'
+                })()
+
+                return (
+                    <div key={coupon.id} className="flex items-center gap-3 py-2.5 px-3 rounded-lg transition-colors"
+                        style={{ '--hover-bg': 'var(--bg-subtle)' } as React.CSSProperties}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-subtle)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                    >
+                        <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                            isUsed ? 'bg-green-500' : isExpired ? 'bg-red-400' : 'bg-[var(--accent)]'
+                        }`} />
+                        <div className="flex-1 min-w-0">
+                            <p className="text-xs font-semibold truncate" style={{ color: 'var(--text)' }}>
+                                {coupon.sessions?.rewards?.label || 'Gain'}
+                            </p>
+                            <p className="text-[10px] font-mono" style={{ color: 'var(--text-faint)' }}>
+                                {coupon.code}
+                            </p>
+                        </div>
+                        <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${
+                                isUsed ? 'bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400'
+                                : isExpired ? 'bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400'
+                                : 'text-[var(--accent)]'
+                            }`} style={!isUsed && !isExpired ? { background: 'var(--accent-light)' } : {}}>
+                                {isUsed ? 'Validé' : isExpired ? 'Expiré' : 'Actif'}
+                            </span>
+                            <span className="text-[10px]" style={{ color: 'var(--text-faint)' }}>{timeAgo}</span>
+                        </div>
+                    </div>
+                )
+            })}
+        </div>
+    )
+}
+
+function HighlightCard({
+    activeCampaign,
+    badBuzzSessions,
+    loyaltyStats,
+    hasWheel,
+    hasLoyalty,
+    stats,
+}: {
+    activeCampaign: any
+    badBuzzSessions: any[]
+    loyaltyStats: { totalCards: number; totalPoints: number; rewardsReached: number } | null
+    hasWheel: boolean
+    hasLoyalty: boolean
+    stats: any[]
+}) {
+    if (badBuzzSessions.length > 0) {
+        return (
+            <div className="rounded-xl border-l-4 border-red-500 p-4 flex items-center justify-between gap-4"
+                style={{ background: 'var(--bg-surface)', borderTopColor: 'var(--border)', borderRightColor: 'var(--border)', borderBottomColor: 'var(--border)' }}>
+                <div className="flex items-center gap-3">
+                    <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                    <div>
+                        <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+                            {badBuzzSessions.length} avis négatif{badBuzzSessions.length > 1 ? 's' : ''} à analyser
+                        </p>
+                        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                            Notes inférieures à 3 — prenez contact avec ces clients
+                        </p>
+                    </div>
+                </div>
+                <Link href="/dashboard/campaigns" className="text-xs font-semibold flex items-center gap-1 flex-shrink-0"
+                    style={{ color: 'var(--text-muted)' }}>
+                    Voir <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+            </div>
+        )
+    }
+
+    if (hasLoyalty && loyaltyStats && loyaltyStats.rewardsReached > 0) {
+        return (
+            <div className="rounded-xl border-l-4 border-green-500 p-4 flex items-center justify-between gap-4"
+                style={{ background: 'var(--bg-surface)', borderTopColor: 'var(--border)', borderRightColor: 'var(--border)', borderBottomColor: 'var(--border)' }}>
+                <div className="flex items-center gap-3">
+                    <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                    <div>
+                        <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+                            {loyaltyStats.rewardsReached} client{loyaltyStats.rewardsReached > 1 ? 's ont' : ' a'} atteint leur récompense
+                        </p>
+                        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                            Ils peuvent la récupérer au comptoir
+                        </p>
+                    </div>
+                </div>
+                <Link href="/dashboard/loyalty" className="text-xs font-semibold flex items-center gap-1 flex-shrink-0"
+                    style={{ color: 'var(--text-muted)' }}>
+                    Gérer <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+            </div>
+        )
+    }
+
+    const totalScans = parseInt(stats[0]?.value || '0')
+    if (totalScans === 0) {
+        return (
+            <div className="rounded-xl border-l-4 p-4 flex items-center justify-between gap-4"
+                style={{ borderLeftColor: 'var(--accent)', background: 'var(--bg-surface)', borderTopColor: 'var(--border)', borderRightColor: 'var(--border)', borderBottomColor: 'var(--border)' }}>
+                <div className="flex items-center gap-3">
+                    <QrCode className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--accent)' }} />
+                    <div>
+                        <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+                            {hasWheel ? 'Aucune campagne active' : 'Programme de fidélité non configuré'}
+                        </p>
+                        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                            Configurez et affichez votre QR code en point de vente
+                        </p>
+                    </div>
+                </div>
+                <Link href={hasWheel ? '/dashboard/campaigns' : '/dashboard/loyalty'}
+                    className="text-xs font-semibold flex items-center gap-1 flex-shrink-0"
+                    style={{ color: 'var(--accent)' }}>
+                    Configurer <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+            </div>
+        )
+    }
+
+    return (
+        <div className="rounded-xl border-l-4 border-green-500 p-4"
+            style={{ background: 'var(--bg-surface)', borderTopColor: 'var(--border)', borderRightColor: 'var(--border)', borderBottomColor: 'var(--border)' }}>
+            <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>
+                {totalScans} scan{totalScans > 1 ? 's' : ''} enregistré{totalScans > 1 ? 's' : ''}
+            </p>
+        </div>
+    )
+}
 
 export default function DashboardPage() {
     const [stats, setStats] = useState<any[]>([])
@@ -26,12 +210,16 @@ export default function DashboardPage() {
     const [dailyStats, setDailyStats] = useState<any[]>([])
     const [funnelData, setFunnelData] = useState<any[]>([])
     const [roiData, setRoiData] = useState({ revenue: 0, customers: 0 })
+    const [loyaltyStats, setLoyaltyStats] = useState<{ totalCards: number; totalPoints: number; rewardsReached: number } | null>(null)
     const [loading, setLoading] = useState(true)
     const [restaurant, setRestaurant] = useState<any>(null)
     const [rewardCount, setRewardCount] = useState(0)
     const [activeCampaign, setActiveCampaign] = useState<any>(null)
+    const [hasLoyaltyProgram, setHasLoyaltyProgram] = useState(false)
 
     const supabase = createClient()
+    const hasWheel = usePlanFeature('wheel')
+    const hasLoyalty = usePlanFeature('loyalty')
 
     useEffect(() => {
         async function fetchStats() {
@@ -47,7 +235,6 @@ export default function DashboardPage() {
             if (!restData) return
             setRestaurant(restData)
 
-            // Fetch Campaign for its IDs
             const { data: campaign } = await supabase
                 .from('campaigns')
                 .select('id')
@@ -58,15 +245,12 @@ export default function DashboardPage() {
             if (campaign) {
                 setActiveCampaign(campaign)
 
-                // Fetch Reward Count
                 const { count: rCount } = await supabase
                     .from('rewards')
                     .select('*', { count: 'exact', head: true })
                     .eq('campaign_id', campaign.id)
-
                 setRewardCount(rCount || 0)
 
-                // Fetch real counts using joins
                 const { count: scans } = await supabase
                     .from('analytics_events')
                     .select('id, sessions!inner(campaign_id)', { count: 'exact', head: true })
@@ -102,55 +286,34 @@ export default function DashboardPage() {
                     ? (ratingsData!.reduce((acc, curr) => acc + (curr.rating || 0), 0) / ratingsCount).toFixed(1)
                     : '0.0'
 
-                // Impact CA Estimation (using custom average ticket)
                 const avgTicket = restData.average_ticket || 15
-                const roiRevenue = (usedCoupons || 0) * avgTicket
-                setRoiData({ revenue: roiRevenue, customers: usedCoupons || 0 })
+                setRoiData({ revenue: (usedCoupons || 0) * avgTicket, customers: usedCoupons || 0 })
 
-                // Funnel Calculation (Cumulative from Scans)
                 const scansCount = scans || 0
                 setFunnelData([
-                    { name: 'Scans QR', value: scansCount, percent: 100, color: '#1d1dd7' },
-                    {
-                        name: 'Jeux lancés',
-                        value: spins || 0,
-                        percent: scansCount ? Math.round(((spins || 0) / scansCount) * 100) : 0,
-                        color: '#4f46e5'
-                    },
-                    {
-                        name: 'Notes reçues',
-                        value: ratingsCount,
-                        percent: scansCount ? Math.round((ratingsCount / scansCount) * 100) : 0,
-                        color: '#6366f1'
-                    },
-                    {
-                        name: 'Clics Google',
-                        value: googleClicks || 0,
-                        percent: scansCount ? Math.round(((googleClicks || 0) / scansCount) * 100) : 0,
-                        color: '#818cf8'
-                    },
+                    { name: 'Scans QR', value: scansCount, percent: 100, color: 'var(--accent)' },
+                    { name: 'Jeux lancés', value: spins || 0, percent: scansCount ? Math.round(((spins || 0) / scansCount) * 100) : 0, color: '#4f46e5' },
+                    { name: 'Notes reçues', value: ratingsCount, percent: scansCount ? Math.round((ratingsCount / scansCount) * 100) : 0, color: '#6366f1' },
+                    { name: 'Clics Google', value: googleClicks || 0, percent: scansCount ? Math.round(((googleClicks || 0) / scansCount) * 100) : 0, color: '#818cf8' },
                 ])
 
                 setStats([
-                    { label: 'Scans QR', value: (scans || 0).toString(), icon: QrCode, color: 'blue' },
-                    { label: 'Participations', value: (spins || 0).toString(), icon: HandMetal, color: 'purple' },
-                    { label: 'Notes client', value: ratingsCount.toString(), icon: Star, color: 'yellow' },
-                    { label: 'Moyenne', value: ratingsAvg, icon: BarChart3, color: 'green' },
-                    { label: 'Clics Google', value: (googleClicks || 0).toString(), icon: MousePointer2, color: 'indigo' },
-                    { label: 'Coupons validés', value: (usedCoupons || 0).toString(), icon: TicketCheck, color: 'orange' },
+                    { label: 'Scans QR', value: (scans || 0).toString(), icon: QrCode },
+                    { label: 'Participations', value: (spins || 0).toString(), icon: HandMetal },
+                    { label: 'Notes client', value: ratingsCount.toString(), icon: Star },
+                    { label: 'Moyenne', value: ratingsAvg, icon: BarChart3, accent: true },
+                    { label: 'Clics Google', value: (googleClicks || 0).toString(), icon: MousePointer2 },
+                    { label: 'Coupons validés', value: (usedCoupons || 0).toString(), icon: TicketCheck },
                 ])
 
-                // Fetch Recent Coupons (Validated and Active)
                 const { data: coupons } = await supabase
                     .from('coupons')
                     .select('*, sessions!inner(rewards(label), campaign_id)')
                     .eq('sessions.campaign_id', campaign.id)
                     .order('created_at', { ascending: false })
-                    .limit(5)
-
+                    .limit(8)
                 setRecentCoupons(coupons || [])
 
-                // Fetch Daily Stats (Last 7 days)
                 const sevenDaysAgo = new Date()
                 sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
 
@@ -167,28 +330,24 @@ export default function DashboardPage() {
                     .eq('sessions.campaign_id', campaign.id)
                     .gt('created_at', sevenDaysAgo.toISOString())
 
-                // Process data for charts
                 const days = [...Array(7)].map((_, i) => {
                     const d = new Date()
                     d.setDate(d.getDate() - (6 - i))
                     const dateStr = d.toISOString().split('T')[0]
-
-                    const scans = dailyEvents?.filter(e => e.created_at.startsWith(dateStr)).length || 0
+                    const scansDay = dailyEvents?.filter(e => e.created_at.startsWith(dateStr)).length || 0
                     const daySessions = dailySessions?.filter(s => s.created_at.startsWith(dateStr)) || []
                     const ratings = daySessions.filter(s => s.rating !== null)
                     const avg = ratings.length > 0
                         ? ratings.reduce((acc, curr) => acc + curr.rating, 0) / ratings.length
                         : 0
-
                     return {
                         label: d.toLocaleDateString('fr-FR', { weekday: 'short' }),
-                        scans,
+                        scans: scansDay,
                         avg: avg.toFixed(1)
                     }
                 })
                 setDailyStats(days)
 
-                // Fetch Bad Buzz Alerts (Ratings < 3)
                 if (restData.bad_buzz_alerts) {
                     const { data: badSessions } = await supabase
                         .from('sessions')
@@ -200,16 +359,25 @@ export default function DashboardPage() {
                     setBadBuzzSessions(badSessions || [])
                 }
             } else {
-                // Default empty stats if no active campaign
                 setStats([
-                    { label: 'Scans QR', value: '0', icon: QrCode, color: 'blue' },
-                    { label: 'Spins (Jeux)', value: '0', icon: HandMetal, color: 'purple' },
-                    { label: 'Notes client', value: '0', icon: Star, color: 'yellow' },
-                    { label: 'Moyenne', value: '0.0', icon: BarChart3, color: 'green' },
-                    { label: 'Clics Google', value: '0', icon: MousePointer2, color: 'indigo' },
-                    { label: 'Coupons validés', value: '0', icon: TicketCheck, color: 'orange' },
+                    { label: 'Scans QR', value: '0', icon: QrCode },
+                    { label: 'Participations', value: '0', icon: HandMetal },
+                    { label: 'Notes client', value: '0', icon: Star },
+                    { label: 'Moyenne', value: '0.0', icon: BarChart3, accent: true },
+                    { label: 'Clics Google', value: '0', icon: MousePointer2 },
+                    { label: 'Coupons validés', value: '0', icon: TicketCheck },
                 ])
             }
+
+            try {
+                const loyaltyRes = await fetch('/api/loyalty/program')
+                if (loyaltyRes.ok) {
+                    const loyaltyData = await loyaltyRes.json()
+                    if (loyaltyData.stats) setLoyaltyStats(loyaltyData.stats)
+                    if (loyaltyData.program?.id) setHasLoyaltyProgram(true)
+                }
+            } catch { /* non-blocking */ }
+
             setLoading(false)
         }
 
@@ -217,331 +385,231 @@ export default function DashboardPage() {
     }, [])
 
     if (loading) return (
-        <div className="flex-1 flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-gray-100 italic text-gray-400 font-medium">
-            <Loader2 className="w-8 h-8 animate-spin mb-2" /> Analyse des données...
+        <div className="flex-1 flex flex-col items-center justify-center py-20 rounded-xl border font-medium"
+            style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)', color: 'var(--text-faint)' }}>
+            <Loader2 className="w-5 h-5 animate-spin mb-2" />
+            <span className="text-sm">Chargement...</span>
         </div>
     )
 
+    const today = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
+    const visibleStats = stats.filter(s => hasWheel || !['Participations', 'Coupons validés'].includes(s.label))
+
     return (
-        <div className="space-y-6 md:space-y-8">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">Bonjour, {restaurant?.name || 'Restaurateur'} 👋</h1>
-                    <p className="text-gray-500 font-medium text-sm md:text-base">Voici les performances de votre établissement en temps réel.</p>
-                </div>
-                <div className="self-start md:self-auto bg-[#f0f0ff] text-[#1d1dd7] px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4" /> LIVE
-                </div>
+        <div className="space-y-6 max-w-5xl mx-auto">
+
+            {/* Header */}
+            <div>
+                <p className="text-[11px] font-semibold uppercase tracking-widest mb-1 capitalize" style={{ color: 'var(--text-faint)' }}>
+                    {today}
+                </p>
+                <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text)' }}>
+                    Bonjour, {restaurant?.name || 'Restaurateur'}
+                </h1>
             </div>
 
+            {/* Installation wizard */}
             <InstallationWizard
                 restaurant={restaurant}
                 campaign={activeCampaign}
                 rewardCount={rewardCount}
+                hasLoyaltyProgram={hasLoyaltyProgram}
+                hasWheel={hasWheel}
             />
 
-            {/* Empty State / Call to Action if no stats yet */}
-            {stats[0]?.value === '0' && stats[1]?.value === '0' && (
-                <div className="bg-gradient-to-br from-indigo-600 to-[#1d1dd7] p-8 md:p-12 rounded-[2.5rem] md:rounded-[3.5rem] text-white relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -mr-48 -mt-48 group-hover:scale-110 transition-transform duration-700" />
-                    <div className="relative z-10 space-y-6 max-w-2xl">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/10">✨ Premiers pas</div>
-                        <h2 className="text-3xl md:text-4xl font-black tracking-tight leading-tight italic">Prêt à faire décoller <br /> vos avis Google ?</h2>
-                        <p className="text-white/70 font-medium text-base md:text-lg italic">
-                            Lancez votre première campagne "Roue de la Fortune" et commencez à récolter des avis 5 étoiles en un clin d'œil.
-                        </p>
-                        <div className="pt-2 md:pt-4">
-                            <button
-                                onClick={() => window.location.href = '/dashboard/campaigns'}
-                                className="w-full sm:w-auto px-10 py-5 bg-white text-[#1d1dd7] font-black rounded-2xl hover:bg-gray-100 transition-all shadow-xl active:scale-95 uppercase tracking-widest text-sm"
-                            >
-                                CRÉER MA CAMPAGNE
-                            </button>
+            {/* Highlight */}
+            <HighlightCard
+                activeCampaign={activeCampaign}
+                badBuzzSessions={badBuzzSessions}
+                loyaltyStats={loyaltyStats}
+                hasWheel={hasWheel}
+                hasLoyalty={hasLoyalty}
+                stats={stats}
+            />
+
+            {/* Stats grid */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {visibleStats.map((stat) => (
+                    <StatCard
+                        key={stat.label}
+                        label={stat.label}
+                        value={stat.value}
+                        icon={stat.icon}
+                        accent={stat.accent}
+                    />
+                ))}
+                {hasLoyalty && loyaltyStats && (
+                    <>
+                        <StatCard label="Cartes actives" value={loyaltyStats.totalCards.toString()} icon={CreditCard} />
+                        <StatCard label="Points distribués" value={loyaltyStats.totalPoints.toString()} icon={Coins} />
+                        <StatCard label="Récompenses" value={loyaltyStats.rewardsReached.toString()} icon={CheckCircle2} accent />
+                    </>
+                )}
+            </div>
+
+            {/* Charts + Activity */}
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+
+                {/* Bar chart */}
+                <div className="lg:col-span-3 rounded-xl border p-5"
+                    style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
+                    <div className="flex items-center justify-between mb-6">
+                        <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Scans — 7 derniers jours</p>
+                        <TrendingUp className="w-4 h-4" style={{ color: 'var(--text-faint)' }} />
+                    </div>
+                    <div className="flex items-end justify-between h-40 gap-1.5">
+                        {dailyStats.map((day, i) => {
+                            const maxScans = Math.max(...dailyStats.map(d => d.scans), 1)
+                            const height = Math.max((day.scans / maxScans) * 100, 4)
+                            return (
+                                <div key={i} className="flex-1 flex flex-col items-center gap-2 group">
+                                    <div className="w-full relative flex justify-center">
+                                        <div
+                                            className="w-full rounded-t-md transition-all duration-500 relative"
+                                            style={{
+                                                height: `${(height / 100) * 140}px`,
+                                                background: day.scans > 0 ? 'var(--accent)' : 'var(--border)',
+                                                opacity: day.scans > 0 ? 1 : 0.4,
+                                            }}
+                                        >
+                                            {day.scans > 0 && (
+                                                <div className="absolute -top-7 left-1/2 -translate-x-1/2 text-[10px] font-bold px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap"
+                                                    style={{ background: 'var(--text)', color: 'var(--bg)' }}>
+                                                    {day.scans}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <span className="text-[10px] font-medium uppercase" style={{ color: 'var(--text-faint)' }}>
+                                        {day.label}
+                                    </span>
+                                </div>
+                            )
+                        })}
+                    </div>
+                </div>
+
+                {/* Activity feed */}
+                <div className="lg:col-span-2 rounded-xl border p-5"
+                    style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
+                    <p className="text-sm font-semibold mb-4" style={{ color: 'var(--text)' }}>Activité récente</p>
+                    <ActivityFeed coupons={recentCoupons} />
+                </div>
+            </div>
+
+            {/* Funnel + ROI — wheel only */}
+            {hasWheel && (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div className="lg:col-span-2 rounded-xl border p-5"
+                        style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
+                        <div className="flex items-center justify-between mb-6">
+                            <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Tunnel de conversion</p>
+                            <span className="text-xs font-semibold px-2 py-1 rounded-md bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400">
+                                {funnelData[3]?.percent ?? 0}% final
+                            </span>
+                        </div>
+                        <div className="space-y-3">
+                            {funnelData.map((step, i) => (
+                                <div key={step.name}>
+                                    <div className="flex justify-between text-xs mb-1.5">
+                                        <span style={{ color: 'var(--text-muted)' }}>{step.name}</span>
+                                        <span className="font-semibold" style={{ color: 'var(--text)' }}>
+                                            {step.value} <span style={{ color: 'var(--text-faint)' }}>· {step.percent}%</span>
+                                        </span>
+                                    </div>
+                                    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
+                                        <div
+                                            className="h-full rounded-full transition-all duration-700"
+                                            style={{ width: `${step.percent}%`, background: step.color }}
+                                        />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="rounded-xl border p-5 flex flex-col justify-between"
+                        style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
+                        <div>
+                            <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: 'var(--text-faint)' }}>
+                                Impact CA estimé
+                            </p>
+                            <p className="text-4xl font-bold tracking-tight mb-1" style={{ color: 'var(--text)' }}>
+                                {roiData.revenue}€
+                            </p>
+                            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                                {roiData.customers} client{roiData.customers > 1 ? 's' : ''} · panier moy. {restaurant?.average_ticket || 15}€
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-2 pt-4 border-t mt-4" style={{ borderColor: 'var(--border)' }}>
+                            <Coins className="w-4 h-4" style={{ color: 'var(--text-faint)' }} />
+                            <p className="text-xs" style={{ color: 'var(--text-faint)' }}>
+                                Basé sur les coupons validés en caisse
+                            </p>
                         </div>
                     </div>
                 </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {stats.map((stat, i) => (
-                    <div
-                        key={stat.label}
-                        className="bg-white p-7 rounded-[2.5rem] shadow-sm border border-gray-100 flex items-start justify-between hover:shadow-xl hover:shadow-[#1d1dd7]/5 transition-all duration-300 group"
-                    >
-                        <div>
-                            <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-2 group-hover:text-gray-500 transition-colors">{stat.label}</p>
-                            <p className="text-4xl font-black text-gray-900">{stat.value}</p>
-                        </div>
-                        <div className={`p-4 rounded-2xl bg-${stat.color}-50 text-${stat.color}-600 group-hover:scale-110 transition-transform`}>
-                            <stat.icon className="w-6 h-6" />
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            {/* ROI & Funnel Analysis */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Funnel Analysis */}
-                <div className="lg:col-span-2 bg-white p-8 md:p-10 rounded-[3rem] shadow-sm border border-gray-100">
-                    <div className="flex items-center justify-between mb-10">
-                        <div>
-                            <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight">Tunnel de Conversion</h2>
-                            <p className="text-sm text-gray-500 font-medium italic">Efficacité de votre parcours client</p>
-                        </div>
-                        <div className="bg-green-50 text-green-600 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border border-green-100 italic">
-                            {funnelData[3]?.percent}% de succès final
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col items-center gap-4 relative">
-                        {funnelData.map((step, i) => {
-                            // Calculate width for funnel effect: 100%, 85%, 70%, 55%
-                            const stepWidth = 100 - (i * 15);
-                            return (
-                                <div key={step.name} className="w-full relative flex flex-col items-center group">
-                                    <div className="w-full flex justify-between items-end mb-2 px-1 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
-                                        <span>{step.name}</span>
-                                        <span className="text-gray-900">{step.value}</span>
-                                    </div>
-
-                                    <div className="w-full h-12 bg-gray-50 rounded-2xl border border-gray-100 overflow-hidden relative shadow-inner">
-                                        <div
-                                            className="h-full transition-all duration-1000 ease-out flex items-center justify-center relative overflow-hidden"
-                                            style={{
-                                                width: `${step.percent}%`,
-                                                margin: '0 auto',
-                                                background: `linear-gradient(135deg, ${step.color}, ${step.color}dd)`,
-                                                boxShadow: `0 4px 15px -3px ${step.color}44`
-                                            }}
-                                        >
-                                            {/* Glossy effect */}
-                                            <div className="absolute top-0 left-0 w-full h-1/2 bg-white/10" />
-                                            <span className="relative z-10 text-[10px] font-black text-white drop-shadow-md">
-                                                {step.percent}%
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    {i < funnelData.length - 1 && (
-                                        <div className="flex flex-col items-center -my-2 opacity-30 z-20">
-                                            <div className="w-0.5 h-6 bg-gradient-to-b from-blue-600 to-transparent" />
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                {/* ROI Estimation */}
-                <div className="bg-gradient-to-br from-[#1d1dd7] to-[#0f0f8a] p-10 rounded-[3rem] text-white flex flex-col justify-between relative shadow-2xl">
-                    <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
-                    <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
-
-                    <div className="relative">
-                        <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-md border border-white/10">
-                            <Coins className="w-8 h-8 text-yellow-300" />
-                        </div>
-                        <h2 className="text-xl font-black uppercase tracking-tight mb-2 italic">Impact CA Estimé</h2>
-                        <p className="text-white/60 text-xs font-medium uppercase tracking-widest mb-10 leading-relaxed italic">
-                            Chiffre d'affaires potentiel généré par vos coupons validés (Basé sur votre panier moyen de {restaurant?.average_ticket || 15}€).
-                        </p>
-
-                        <div className="space-y-1 mb-8">
-                            <div className="text-5xl font-black tracking-tighter">{roiData.revenue}€</div>
-                            <div className="text-white/40 text-[10px] font-black uppercase tracking-widest">Encaissé par l'établissement</div>
-                        </div>
-
-                        <div className="flex items-center gap-3 px-4 py-3 bg-white/10 rounded-2xl border border-white/10 backdrop-blur-sm">
-                            <div className="text-2xl font-black">{roiData.customers}</div>
-                            <div className="text-[10px] font-black text-white/40 uppercase tracking-widest leading-none">Clients <br /> revenus</div>
-                        </div>
-                    </div>
-
-                    <div className="group relative">
-                        <button className="w-full py-4 bg-white text-[#1d1dd7] rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] active:scale-95 transition-all outline-none">
-                            Détails du calcul
-                        </button>
-                        <div className="absolute bottom-full left-0 w-full mb-6 bg-gray-900/95 backdrop-blur-xl p-6 rounded-[2rem] text-white opacity-0 group-hover:opacity-100 transition-all pointer-events-none transform translate-y-4 group-hover:translate-y-0 shadow-2xl border border-white/10 z-50">
-                            <div className="space-y-4">
-                                <div>
-                                    <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">MÉTHODE : IMPACT CA</p>
-                                    <p className="text-xs text-white/70 leading-relaxed italic">
-                                        Estimation basée sur la conversion réelle en établissement.
-                                    </p>
-                                </div>
-                                <div className="bg-white/5 p-4 rounded-xl border border-white/5">
-                                    <div className="flex justify-between items-center text-sm font-bold mb-2">
-                                        <span className="text-white/40">Coupons validés</span>
-                                        <span>{roiData.customers}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center text-sm font-bold mb-4">
-                                        <span className="text-white/40">Panier moyen</span>
-                                        <span>{restaurant?.average_ticket || 15}€</span>
-                                    </div>
-                                    <div className="pt-4 border-t border-white/10 flex justify-between items-center text-lg font-black text-yellow-300 italic">
-                                        <span>TOTAL ESTIMÉ</span>
-                                        <span>{roiData.revenue}€</span>
-                                    </div>
-                                </div>
-                                <p className="text-[9px] text-white/30 italic text-center">
-                                    Note : Un coupon validé confirme la présence physique du client au comptoir.
+            {/* Conversion ratios — wheel only */}
+            {hasWheel && stats.length > 0 && (
+                <div className="rounded-xl border p-5" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
+                    <p className="text-sm font-semibold mb-4" style={{ color: 'var(--text)' }}>Taux de conversion</p>
+                    <div className="grid grid-cols-3 gap-0 divide-x" style={{ '--tw-divide-opacity': 1 } as any}>
+                        {[
+                            {
+                                label: 'Scan → Jeu',
+                                value: stats[0]?.value !== '0' ? `${Math.round((parseInt(stats[1]?.value) / parseInt(stats[0]?.value)) * 100)}%` : '—'
+                            },
+                            {
+                                label: 'Jeu → Note',
+                                value: stats[1]?.value !== '0' ? `${Math.round((parseInt(stats[2]?.value) / parseInt(stats[1]?.value)) * 100)}%` : '—'
+                            },
+                            {
+                                label: 'Note → Google',
+                                value: stats[2]?.value !== '0' ? `${Math.round((parseInt(stats[4]?.value) / parseInt(stats[2]?.value)) * 100)}%` : '—'
+                            },
+                        ].map((item) => (
+                            <div key={item.label} className="text-center px-4 first:pl-0 last:pr-0" style={{ borderColor: 'var(--border)' }}>
+                                <p className="text-xl font-bold" style={{ color: 'var(--accent)' }}>{item.value}</p>
+                                <p className="text-[10px] font-medium mt-1 uppercase tracking-widest" style={{ color: 'var(--text-faint)' }}>
+                                    {item.label}
                                 </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {restaurant?.bad_buzz_alerts && badBuzzSessions.length > 0 && (
-                <div className="bg-red-50 border-2 border-red-100 p-8 rounded-[3rem] animate-pulse">
-                    <div className="flex items-center gap-3 mb-6 text-red-600">
-                        <AlertTriangle className="w-6 h-6" />
-                        <h2 className="text-xl font-bold uppercase tracking-tight">Focus : Retours Clients à Analyser 🛡️</h2>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {badBuzzSessions.map((s) => (
-                            <div key={s.id} className="bg-white p-6 rounded-2xl shadow-sm border border-red-100 flex flex-col items-center text-center">
-                                <div className="flex gap-1 mb-2">
-                                    {[...Array(5)].map((_, i) => (
-                                        <Star key={i} className={`w-4 h-4 ${i < s.rating ? 'text-red-500 fill-red-500' : 'text-gray-200'}`} />
-                                    ))}
-                                </div>
-                                <p className="text-sm font-bold text-gray-900 mb-1">Note de {s.rating}/5</p>
-                                {s.feedback && (
-                                    <p className="text-xs text-gray-600 italic mb-2 line-clamp-2">"{s.feedback}"</p>
-                                )}
-                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-auto">Reçue à {new Date(s.created_at).toLocaleTimeString()}</p>
                             </div>
                         ))}
                     </div>
-                    <p className="mt-6 text-xs text-red-500 font-bold text-center uppercase tracking-widest">
-                        Utilisez ces retours constructifs pour perfectionner votre expérience client.
-                    </p>
                 </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-                <div className="bg-white p-6 md:p-10 rounded-[2.5rem] md:rounded-[3rem] shadow-sm border border-gray-100">
-                    <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-6 md:mb-8 flex items-center gap-3">
-                        <TrendingUp className="w-5 h-5 text-[#1d1dd7]" /> Volume de Scans (7j)
-                    </h2>
-                    <div className="flex items-end justify-between h-32 md:h-48 gap-1 md:gap-2">
-                        {dailyStats.map((day, i) => {
-                            const maxScans = Math.max(...dailyStats.map(d => d.scans), 1)
-                            const height = (day.scans / maxScans) * 100
-                            return (
-                                <div key={i} className="flex-1 flex flex-col items-center gap-2 md:gap-3 group">
-                                    <div className="relative w-full flex justify-center">
-                                        <div
-                                            className="w-full max-w-[16px] md:max-w-[24px] bg-[#f0f0ff] group-hover:bg-[#1d1dd7] transition-all rounded-t-lg relative"
-                                            style={{ height: `${height}%`, minHeight: '4px' }}
-                                        >
-                                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[8px] md:text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                                                {day.scans}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <span className="text-[8px] md:text-[10px] font-black text-gray-400 uppercase tracking-tighter">{day.label}</span>
+            {/* Bad buzz */}
+            {restaurant?.bad_buzz_alerts && badBuzzSessions.length > 0 && (
+                <div className="rounded-xl border border-red-200 dark:border-red-900/40 p-5"
+                    style={{ background: 'var(--bg-surface)' }}>
+                    <div className="flex items-center gap-2 mb-4">
+                        <AlertTriangle className="w-4 h-4 text-red-500" />
+                        <p className="text-sm font-semibold text-red-600 dark:text-red-400">Avis négatifs récents</p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        {badBuzzSessions.map((s) => (
+                            <div key={s.id} className="rounded-lg border p-4"
+                                style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border)' }}>
+                                <div className="flex gap-0.5 mb-2">
+                                    {[...Array(5)].map((_, i) => (
+                                        <Star key={i} className={`w-3.5 h-3.5 ${i < s.rating ? 'text-red-500 fill-red-500' : 'opacity-20'}`}
+                                            style={i >= s.rating ? { color: 'var(--text-faint)' } : {}} />
+                                    ))}
                                 </div>
-                            )
-                        })}
-                    </div>
-                </div>
-
-                <div className="bg-white p-6 md:p-10 rounded-[2.5rem] md:rounded-[3rem] shadow-sm border border-gray-100">
-                    <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-6 md:mb-8 flex items-center gap-3">
-                        <Star className="w-5 h-5 text-yellow-400" /> Satisfaction Moyenne (7j)
-                    </h2>
-                    <div className="flex items-end justify-between h-32 md:h-48 gap-1 md:gap-2">
-                        {dailyStats.map((day, i) => {
-                            const height = (parseFloat(day.avg) / 5) * 100
-                            return (
-                                <div key={i} className="flex-1 flex flex-col items-center gap-2 md:gap-3 group">
-                                    <div className="relative w-full flex justify-center">
-                                        <div
-                                            className="w-full max-w-[16px] md:max-w-[24px] bg-yellow-50 group-hover:bg-yellow-400 transition-all rounded-t-lg relative"
-                                            style={{ height: `${height}%`, minHeight: '4px' }}
-                                        >
-                                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[8px] md:text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                                                ★ {day.avg}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <span className="text-[8px] md:text-[10px] font-black text-gray-400 uppercase tracking-tighter">{day.label}</span>
-                                </div>
-                            )
-                        })}
-                    </div>
-                </div>
-            </div>
-
-            <div className="bg-white p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] shadow-sm border border-gray-100 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-[#f0f0ff]/50 rounded-full blur-3xl -mr-32 -mt-32" />
-                <h2 className="text-xl font-bold text-gray-900 mb-6 relative">Analyse de conversion</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-8 relative border md:border-0 border-gray-50 rounded-2xl overflow-hidden">
-                    <div className="text-center p-6 md:p-6 border-b md:border-b-0 md:border-r border-gray-100">
-                        <p className="text-2xl md:text-3xl font-black text-[#1d1dd7]">
-                            {stats[0]?.value !== '0' ? Math.round((parseInt(stats[1]?.value) / parseInt(stats[0]?.value)) * 100) : 0}%
-                        </p>
-                        <p className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest mt-2">Engagement (Scan → Spin)</p>
-                    </div>
-                    <div className="text-center p-6 md:p-6 border-b md:border-b-0 md:border-r border-gray-100">
-                        <p className="text-2xl md:text-3xl font-black text-[#1d1dd7]">
-                            {stats[1]?.value !== '0' ? Math.round((parseInt(stats[2]?.value) / parseInt(stats[1]?.value)) * 100) : 0}%
-                        </p>
-                        <p className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest mt-2">Rétention (Spin → Note)</p>
-                    </div>
-                    <div className="text-center p-6 md:p-6">
-                        <p className="text-2xl md:text-3xl font-black text-[#1d1dd7]">
-                            {stats[2]?.value !== '0' ? Math.round((parseInt(stats[4]?.value) / parseInt(stats[2]?.value)) * 100) : 0}%
-                        </p>
-                        <p className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest mt-2">Impact Google (Note → Clic)</p>
-                    </div>
-                </div>
-            </div>
-
-            <div className="bg-white p-6 md:p-10 rounded-[2.5rem] md:rounded-[3rem] shadow-sm border border-gray-100">
-                <h2 className="text-lg md:text-xl font-black text-gray-900 mb-6 uppercase tracking-tight">Derniers Coupons</h2>
-                <div className="overflow-x-auto -mx-2">
-                    <div className="inline-block min-w-full align-middle px-2">
-                        <table className="w-full">
-                            <thead>
-                                <tr className="text-left text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50">
-                                    <th className="pb-4 pr-4">Code</th>
-                                    <th className="pb-4 pr-4">Gain</th>
-                                    <th className="pb-4 pr-4">Date</th>
-                                    <th className="pb-4 text-right">Statut</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-50">
-                                {recentCoupons.map((coupon) => (
-                                    <tr key={coupon.id} className="group hover:bg-gray-50/50 transition-colors">
-                                        <td className="py-4 pr-4 font-black text-[#1d1dd7] text-sm md:text-base">{coupon.code}</td>
-                                        <td className="py-4 pr-4 font-bold text-gray-700 text-sm md:text-base truncate max-w-[120px] md:max-w-none">{coupon.sessions?.rewards?.label}</td>
-                                        <td className="py-4 pr-4 text-[10px] md:text-sm text-gray-500 whitespace-nowrap">{new Date(coupon.created_at).toLocaleDateString()}</td>
-                                        <td className="py-4 text-right">
-                                            <span className={`px-2 md:px-3 py-1 rounded-full text-[8px] md:text-[10px] font-black uppercase tracking-widest whitespace-nowrap ${coupon.status === 'used'
-                                                ? 'bg-green-50 text-green-600'
-                                                : coupon.status === 'expired'
-                                                    ? 'bg-red-50 text-red-600'
-                                                    : 'bg-blue-50 text-[#1d1dd7]'
-                                                }`}>
-                                                {coupon.status === 'used' ? 'Validé' : coupon.status === 'expired' ? 'Expiré' : 'Actif'}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))}
-                                {recentCoupons.length === 0 && (
-                                    <tr>
-                                        <td colSpan={4} className="py-10 text-center text-gray-400 italic text-sm">Aucun coupon généré pour le moment.</td>
-                                    </tr>
+                                {s.feedback && (
+                                    <p className="text-xs italic mb-2 line-clamp-2" style={{ color: 'var(--text-muted)' }}>"{s.feedback}"</p>
                                 )}
-                            </tbody>
-                        </table>
+                                <p className="text-[10px] font-medium" style={{ color: 'var(--text-faint)' }}>
+                                    {new Date(s.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                                </p>
+                            </div>
+                        ))}
                     </div>
                 </div>
-            </div>
+            )}
         </div>
     )
 }

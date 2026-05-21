@@ -57,12 +57,12 @@ export default function RegisterPage() {
                             Veuillez cliquer sur le lien dans l'email pour activer votre compte avant de vous connecter.
                         </p>
                     </div>
-                    <button
-                        onClick={() => router.push('/login')}
+                    <Link
+                        href="/login"
                         className="w-full bg-[#1d1dd7] text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#1515a3] transition-all shadow-xl"
                     >
                         RETOUR À LA CONNEXION
-                    </button>
+                    </Link>
                 </div>
             </div>
         )

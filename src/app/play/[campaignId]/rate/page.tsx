@@ -1,17 +1,18 @@
 'use client'
 
-import { useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useState, Suspense } from 'react'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { Star, ArrowRight } from 'lucide-react'
-
 import { usePostHog } from 'posthog-js/react'
 
-export default function RatePage() {
+function RatePageContent() {
     const { campaignId } = useParams()
+    const searchParams = useSearchParams()
+    const isFidelite = searchParams.get('plan') === 'fidelite'
+
     const [rating, setRating] = useState(0)
     const [hover, setHover] = useState(0)
     const [feedback, setFeedback] = useState('')
-    const [tableNumber, setTableNumber] = useState('')
     const [loading, setLoading] = useState(false)
     const router = useRouter()
     const posthog = usePostHog()
@@ -22,7 +23,6 @@ export default function RatePage() {
 
         const sessionId = localStorage.getItem(`rv_sess_${campaignId}`)
 
-        // Track rating submission in PostHog
         posthog?.capture('rating_submitted', {
             campaignId,
             sessionId,
@@ -34,13 +34,7 @@ export default function RatePage() {
             const res = await fetch('/api/game/rate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    campaignId,
-                    sessionId,
-                    rating,
-                    feedback,
-                    tableNumber
-                })
+                body: JSON.stringify({ campaignId, sessionId, rating, feedback })
             })
             const data = await res.json()
 
@@ -58,7 +52,10 @@ export default function RatePage() {
             <div className="text-center">
                 <h2 className="text-3xl font-black mb-4">DERNIÈRE ÉTAPE !</h2>
                 <p className="text-white/70 mb-8 max-w-[250px] mx-auto">
-                    Pour révéler votre gain, quelle note donneriez-vous à votre expérience aujourd'hui ?
+                    {isFidelite
+                        ? 'Quelle note donneriez-vous à votre expérience aujourd\'hui ?'
+                        : 'Pour révéler votre gain, quelle note donneriez-vous à votre expérience aujourd\'hui ?'
+                    }
                 </p>
 
                 <div className="flex items-center gap-2 justify-center mb-12">
@@ -99,13 +96,15 @@ export default function RatePage() {
             </div>
 
             <div className="w-full space-y-6 px-4">
-                <div className="bg-white/5 border-2 border-dashed border-white/20 p-8 rounded-3xl text-center relative overflow-hidden group">
-                    <div className="absolute inset-0 bg-white/5 blur-xl group-hover:bg-white/10 transition-all" />
-                    <div className="relative">
-                        <p className="text-white/30 text-xs font-bold uppercase tracking-widest mb-2">Récompense bloquée</p>
-                        <h3 className="text-2xl font-black text-white/10 blur-[4px] select-none uppercase">VOTRE CADEAU ICI</h3>
+                {!isFidelite && (
+                    <div className="bg-white/5 border-2 border-dashed border-white/20 p-8 rounded-3xl text-center relative overflow-hidden group">
+                        <div className="absolute inset-0 bg-white/5 blur-xl group-hover:bg-white/10 transition-all" />
+                        <div className="relative">
+                            <p className="text-white/30 text-xs font-bold uppercase tracking-widest mb-2">Récompense bloquée</p>
+                            <h3 className="text-2xl font-black text-white/10 blur-[4px] select-none uppercase">VOTRE CADEAU ICI</h3>
+                        </div>
                     </div>
-                </div>
+                )}
 
                 <button
                     onClick={handleSubmit}
@@ -114,9 +113,18 @@ export default function RatePage() {
                         }`}
                     style={{ color: 'var(--primary-color)' }}
                 >
-                    {loading ? 'CONFIRMATION...' : 'RÉVÉLER MON GAIN'} <ArrowRight className="w-6 h-6" />
+                    {loading ? 'CONFIRMATION...' : isFidelite ? 'VALIDER MON AVIS' : 'RÉVÉLER MON GAIN'}
+                    <ArrowRight className="w-6 h-6" />
                 </button>
             </div>
         </div>
+    )
+}
+
+export default function RatePage() {
+    return (
+        <Suspense>
+            <RatePageContent />
+        </Suspense>
     )
 }

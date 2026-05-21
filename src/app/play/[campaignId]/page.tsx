@@ -3,12 +3,15 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowRight, Trophy } from 'lucide-react'
+import { ArrowRight, Trophy, Star } from 'lucide-react'
 import SocialProof from '@/components/game/SocialProof'
+import { isValidPlan } from '@/lib/plans'
+import type { PlanType } from '@/lib/plans'
 
 export default function PlayLandingPage() {
     const { campaignId } = useParams()
     const [campaign, setCampaign] = useState<any>(null)
+    const [plan, setPlan] = useState<PlanType | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const supabase = createClient()
@@ -20,7 +23,6 @@ export default function PlayLandingPage() {
             try {
                 if (!campaignId) return
 
-                // 1. Get campaign and restaurant info
                 const { data: campaignData, error: campError } = await supabase
                     .from('campaigns')
                     .select('*, restaurants(*)')
@@ -35,7 +37,9 @@ export default function PlayLandingPage() {
                     setPrimaryColor(campaignData.restaurants.primary_color)
                 }
 
-                // 2. Init session via API (Server-side IP tracking)
+                const restaurantPlan = campaignData.restaurants?.subscription_plan
+                setPlan(isValidPlan(restaurantPlan) ? restaurantPlan : null)
+
                 const res = await fetch('/api/game/init', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -50,7 +54,6 @@ export default function PlayLandingPage() {
 
                 if (data.error) throw new Error('Erreur lors de l\'initialisation')
 
-                // Store session ID for the rest of the flow
                 localStorage.setItem(`rv_sess_${campaignId}`, data.sessionId)
 
             } catch (err: any) {
@@ -66,7 +69,7 @@ export default function PlayLandingPage() {
     if (loading) return (
         <div className="flex-1 flex flex-col items-center justify-center space-y-4">
             <div className="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin" />
-            <p className="text-white/70 font-medium">Préparation de votre cadeau...</p>
+            <p className="text-white/70 font-medium">Préparation...</p>
         </div>
     )
 
@@ -79,6 +82,8 @@ export default function PlayLandingPage() {
             <p className="text-white/70 mb-8">{error}</p>
         </div>
     )
+
+    const isFideliteOnly = plan === 'fidelite'
 
     return (
         <div className="flex-1 flex flex-col items-center justify-between py-12 text-white">
@@ -110,21 +115,37 @@ export default function PlayLandingPage() {
                 <div className="relative">
                     <div className="absolute inset-0 bg-white/10 blur-3xl rounded-full" />
                     <div className="relative bg-white/5 border border-white/10 p-10 rounded-[3rem] backdrop-blur-sm">
-                        <Trophy className="w-16 h-16 text-yellow-400 mx-auto mb-4 animate-bounce" />
-                        <h3 className="text-2xl font-bold mb-2">Tentez votre chance !</h3>
-                        <p className="text-white/60 text-sm leading-relaxed">
-                            Tournez la roue et gagnez une récompense exclusive offerte par l'établissement.
-                        </p>
+                        {isFideliteOnly ? (
+                            <>
+                                <Star className="w-16 h-16 text-yellow-400 mx-auto mb-4 fill-yellow-400" />
+                                <h3 className="text-2xl font-bold mb-2">Gagnez des points !</h3>
+                                <p className="text-white/60 text-sm leading-relaxed">
+                                    Partagez votre avis et obtenez votre carte de fidélité. Cumulez des points à chaque visite.
+                                </p>
+                            </>
+                        ) : (
+                            <>
+                                <Trophy className="w-16 h-16 text-yellow-400 mx-auto mb-4 animate-bounce" />
+                                <h3 className="text-2xl font-bold mb-2">Tentez votre chance !</h3>
+                                <p className="text-white/60 text-sm leading-relaxed">
+                                    Tournez la roue et gagnez une récompense exclusive offerte par l'établissement.
+                                </p>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>
 
             <button
-                onClick={() => router.push(`/play/${campaignId}/spin`)}
+                onClick={() => router.push(isFideliteOnly
+                    ? `/play/${campaignId}/rate?plan=fidelite`
+                    : `/play/${campaignId}/spin`
+                )}
                 className="w-full bg-white py-6 rounded-[2.5rem] font-black text-xl flex items-center justify-center gap-3 shadow-[0_20px_40px_rgba(0,0,0,0.3)] active:scale-95 transition-transform"
                 style={{ color: primaryColor }}
             >
-                LANCER LA ROUE <ArrowRight className="w-6 h-6" />
+                {isFideliteOnly ? 'LAISSER UN AVIS' : 'LANCER LA ROUE'}
+                <ArrowRight className="w-6 h-6" />
             </button>
         </div>
     )

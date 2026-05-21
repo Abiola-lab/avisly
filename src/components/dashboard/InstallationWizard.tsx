@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { CheckCircle2, Circle, ArrowRight, Store, Gift, QrCode as QrIcon, Sparkles } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useEffect } from 'react'
+import { CheckCircle2, ArrowRight, Store, Gift, QrCode as QrIcon, CreditCard } from 'lucide-react'
+import { motion } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import Link from 'next/link'
 
@@ -10,31 +10,41 @@ interface WizardProps {
     restaurant: any
     campaign: any
     rewardCount: number
+    hasLoyaltyProgram?: boolean
+    hasWheel?: boolean
 }
 
-export default function InstallationWizard({ restaurant, campaign, rewardCount }: WizardProps) {
-    // Steps logic
+export default function InstallationWizard({ restaurant, campaign, rewardCount, hasLoyaltyProgram = false, hasWheel = true }: WizardProps) {
     const steps = [
         {
             id: 'profile',
-            title: 'Profil Restaurant',
-            description: 'Complétez vos informations de base et lien Google Business.',
+            title: 'Profil restaurant',
+            description: 'Informations de base et lien Google Business',
             isCompleted: !!(restaurant?.name && restaurant?.google_link),
             icon: Store,
             href: '/dashboard/settings'
         },
-        {
-            id: 'rewards',
-            title: 'Configuration de la Roue',
-            description: 'Ajoutez les cadeaux que vos clients pourront gagner.',
-            isCompleted: rewardCount >= 1,
-            icon: Gift,
-            href: '/dashboard/campaigns'
-        },
+        hasWheel
+            ? {
+                id: 'rewards',
+                title: 'Configuration de la roue',
+                description: 'Ajoutez les gains que vos clients pourront remporter',
+                isCompleted: rewardCount >= 1,
+                icon: Gift,
+                href: '/dashboard/campaigns'
+            }
+            : {
+                id: 'loyalty',
+                title: 'Programme de fidélité',
+                description: 'Seuil de points et récompense à configurer',
+                isCompleted: hasLoyaltyProgram,
+                icon: CreditCard,
+                href: '/dashboard/loyalty'
+            },
         {
             id: 'print',
-            title: 'Génération QR Code',
-            description: 'Générez votre affiche ou vos stickers QR Code.',
+            title: 'QR Code prêt',
+            description: 'Téléchargez et affichez votre QR code en salle',
             isCompleted: !!campaign,
             icon: QrIcon,
             href: '/dashboard/qr-code'
@@ -47,81 +57,71 @@ export default function InstallationWizard({ restaurant, campaign, rewardCount }
 
     useEffect(() => {
         if (isFinished) {
-            confetti({
-                particleCount: 150,
-                spread: 70,
-                origin: { y: 0.6 },
-                colors: ['#1d1dd7', '#ffcc00', '#ffffff']
-            })
+            confetti({ particleCount: 120, spread: 60, origin: { y: 0.6 }, colors: ['#1d1dd7', '#ffcc00', '#ffffff'] })
         }
     }, [isFinished])
 
-    // On Dashboard, we hide it IF finished, but maybe keep a "Ready" state?
-    // User requested to hide it if everything is good, or at least that's common.
     if (isFinished) return null
 
     return (
         <motion.div
-            initial={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: -12 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100 mb-8 overflow-hidden relative"
+            className="rounded-xl border p-5"
+            style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}
         >
-            <div className="absolute top-0 right-0 p-8 opacity-5">
-                <Sparkles className="w-24 h-24 text-[#1d1dd7]" />
-            </div>
-
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+            <div className="flex items-center justify-between mb-4">
                 <div>
-                    <h2 className="text-xl font-black text-gray-900 flex items-center gap-3">
-                        🚀 Finalisez votre installation
-                        <span className="text-xs font-bold bg-[#1d1dd7] text-white px-3 py-1 rounded-full uppercase tracking-wider">
-                            {progress}%
-                        </span>
-                    </h2>
-                    <p className="text-gray-500 mt-1 font-medium italic">Plus que quelques étapes pour commencer à récolter des avis !</p>
+                    <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Finalisez votre installation</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                        {completedCount}/{steps.length} étapes complétées
+                    </p>
                 </div>
-                <div className="w-full md:w-64 h-3 bg-gray-100 rounded-full overflow-hidden border border-gray-100">
-                    <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${progress}%` }}
-                        className="h-full bg-gradient-to-r from-[#1d1dd7] to-[#4f46e5]"
-                    />
+                <div className="flex items-center gap-2">
+                    <div className="w-28 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
+                        <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${progress}%` }}
+                            className="h-full rounded-full"
+                            style={{ background: 'var(--accent)' }}
+                        />
+                    </div>
+                    <span className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>{progress}%</span>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {steps.map((step, i) => (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {steps.map((step) => (
                     <div
                         key={step.id}
-                        className={`p-6 rounded-[2rem] border-2 transition-all relative ${step.isCompleted
-                                ? 'bg-green-50/50 border-green-100'
-                                : 'bg-white border-gray-100 hover:border-[#1d1dd7]/30 shadow-sm'
-                            }`}
+                        className="rounded-lg border p-4 flex flex-col gap-3"
+                        style={{
+                            background: step.isCompleted ? 'transparent' : 'var(--bg-subtle)',
+                            borderColor: step.isCompleted ? 'var(--border)' : 'var(--border)',
+                            opacity: step.isCompleted ? 0.7 : 1,
+                        }}
                     >
-                        <div className="flex items-center justify-between mb-4">
-                            <div className={`p-3 rounded-2xl ${step.isCompleted ? 'bg-green-500 text-white shadow-lg shadow-green-200' : 'bg-gray-100 text-gray-400'}`}>
-                                <step.icon className="w-6 h-6" />
+                        <div className="flex items-center justify-between">
+                            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                                style={{
+                                    background: step.isCompleted ? 'rgba(34,197,94,0.12)' : 'var(--accent-light)',
+                                    color: step.isCompleted ? '#22c55e' : 'var(--accent)',
+                                }}>
+                                <step.icon className="w-4 h-4" />
                             </div>
-                            {step.isCompleted ? (
-                                <div className="bg-green-500 rounded-full p-1">
-                                    <CheckCircle2 className="w-5 h-5 text-white" />
-                                </div>
-                            ) : (
-                                <Circle className="w-7 h-7 text-gray-200" />
-                            )}
+                            {step.isCompleted && <CheckCircle2 className="w-4 h-4 text-green-500" />}
                         </div>
-                        <h3 className={`font-black uppercase tracking-tight text-sm ${step.isCompleted ? 'text-green-900' : 'text-gray-900'}`}>
-                            {step.title}
-                        </h3>
-                        <p className={`text-xs mt-2 leading-relaxed font-medium ${step.isCompleted ? 'text-green-700/70' : 'text-gray-500'}`}>
-                            {step.description}
-                        </p>
+                        <div>
+                            <p className="text-xs font-semibold" style={{ color: 'var(--text)' }}>{step.title}</p>
+                            <p className="text-[11px] mt-0.5 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+                                {step.description}
+                            </p>
+                        </div>
                         {!step.isCompleted && (
-                            <Link
-                                href={step.href}
-                                className="mt-4 text-[#1d1dd7] text-xs font-black uppercase tracking-widest flex items-center gap-1 hover:gap-2 transition-all p-2 bg-[#1d1dd7]/5 rounded-xl w-fit"
-                            >
-                                Configurer <ArrowRight className="w-4 h-4" />
+                            <Link href={step.href}
+                                className="text-[11px] font-semibold flex items-center gap-1 mt-auto"
+                                style={{ color: 'var(--accent)' }}>
+                                Configurer <ArrowRight className="w-3 h-3" />
                             </Link>
                         )}
                     </div>

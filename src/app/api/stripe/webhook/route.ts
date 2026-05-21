@@ -9,6 +9,15 @@ const supabaseAdmin = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+const PRICE_TO_PLAN: Record<string, string> = {
+    [process.env.STRIPE_ROUE_MONTHLY_PRICE_ID!]:    'roue',
+    [process.env.STRIPE_ROUE_ANNUAL_PRICE_ID!]:     'roue',
+    [process.env.STRIPE_FIDELITE_MONTHLY_PRICE_ID!]: 'fidelite',
+    [process.env.STRIPE_FIDELITE_ANNUAL_PRICE_ID!]:  'fidelite',
+    [process.env.STRIPE_FULLPRO_MONTHLY_PRICE_ID!]:  'full_pro',
+    [process.env.STRIPE_FULLPRO_ANNUAL_PRICE_ID!]:   'full_pro',
+};
+
 export async function POST(req: Request) {
     const body = await req.text();
     const signature = (await headers()).get('stripe-signature') as string;
@@ -39,19 +48,23 @@ export async function POST(req: Request) {
                     const subscriptionId = session.subscription as string;
                     const subscription = await stripe.subscriptions.retrieve(subscriptionId) as any;
                     const restaurantId = session.metadata?.restaurantId;
+                    const plan = session.metadata?.plan;
 
                     if (!restaurantId) {
                         console.error(`❌ No restaurantId found for session ${session.id} [${event.id}]`);
                         return NextResponse.json({ error: 'restaurantId missing in metadata' }, { status: 400 });
                     }
 
-                    // Save customer ID to restaurant for future checkouts (idempotency)
+                    // Save customer ID + plan to restaurant
                     await supabaseAdmin
                         .from('restaurants')
-                        .update({ stripe_customer_id: session.customer as string })
+                        .update({
+                            stripe_customer_id: session.customer as string,
+                            ...(plan ? { subscription_plan: plan } : {})
+                        })
                         .eq('id', restaurantId);
 
-                    console.log(`✅ Checkout completed for restaurant: ${restaurantId} (Event: ${event.id})`);
+                    console.log(`✅ Checkout completed for restaurant: ${restaurantId}, plan: ${plan} (Event: ${event.id})`);
 
                     const { error } = await supabaseAdmin.from('subscriptions').upsert({
                         restaurant_id: restaurantId,
@@ -78,9 +91,11 @@ export async function POST(req: Request) {
                 const subscription = event.data.object as any;
                 console.log(`🔄 Subscription updated: ${subscription.id} (Status: ${subscription.status}, CancelAtPeriodEnd: ${subscription.cancel_at_period_end})`);
 
+                const newPriceId = subscription.items.data[0].price.id;
+
                 const { error } = await supabaseAdmin.from('subscriptions').update({
                     status: subscription.status,
-                    plan_id: subscription.items.data[0].price.id,
+                    plan_id: newPriceId,
                     cancel_at_period_end: subscription.cancel_at_period_end,
                     current_period_end: safeStripeDate(subscription.current_period_end),
                     trial_end: safeStripeDate(subscription.trial_end),
@@ -90,6 +105,22 @@ export async function POST(req: Request) {
                     .eq('stripe_subscription_id', subscription.id);
 
                 if (error) console.error('❌ Error updating subscription (update):', error);
+
+                // Sync plan type to restaurants table
+                const newPlan = PRICE_TO_PLAN[newPriceId];
+                if (newPlan) {
+                    const { data: subRecord } = await supabaseAdmin
+                        .from('subscriptions')
+                        .select('restaurant_id')
+                        .eq('stripe_subscription_id', subscription.id)
+                        .single();
+                    if (subRecord?.restaurant_id) {
+                        await supabaseAdmin
+                            .from('restaurants')
+                            .update({ subscription_plan: newPlan })
+                            .eq('id', subRecord.restaurant_id);
+                    }
+                }
                 break;
             }
 

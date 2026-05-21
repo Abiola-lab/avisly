@@ -8,145 +8,359 @@ import {
     Settings,
     QrCode,
     TicketCheck,
-    Trophy,
     LogOut,
     Printer,
     Menu,
     X,
-    Star
+    Star,
+    CreditCard,
+    Trophy,
+    ChevronLeft,
+    ChevronRight,
+    Sun,
+    Moon,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigationGuard } from '@/lib/contexts/NavigationGuardContext'
+import { usePlanFeature } from '@/lib/contexts/PlanContext'
+import { useSidebar } from '@/lib/contexts/SidebarContext'
+import { useTheme } from '@/lib/contexts/ThemeContext'
+import type { PlanFeature } from '@/lib/plans'
 
-const menuItems = [
+type MenuItem = {
+    name: string
+    href: string
+    icon: React.ElementType
+    feature?: PlanFeature
+}
+
+const menuItems: MenuItem[] = [
     { name: 'Tableau de bord', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Campagnes & Roue', href: '/dashboard/campaigns', icon: Trophy },
+    { name: 'Campagnes & Roue', href: '/dashboard/campaigns', icon: Trophy, feature: 'wheel' },
     { name: 'QR Code', href: '/dashboard/qr-code', icon: QrCode },
-    { name: 'Studio Print', href: '/dashboard/studio-print', icon: Printer },
-    { name: 'Validation Coupons', href: '/dashboard/validation', icon: TicketCheck },
-    { name: 'Paramètres', href: '/dashboard/settings', icon: Settings },
+    { name: 'Studio Print', href: '/dashboard/studio-print', icon: Printer, feature: 'print' },
+    { name: 'Validation Coupons', href: '/dashboard/validation', icon: TicketCheck, feature: 'coupons' },
+    { name: 'Carte de Fidélité', href: '/dashboard/loyalty', icon: CreditCard, feature: 'loyalty' },
 ]
+
+function FilteredMenu({
+    items,
+    pathname,
+    onNav,
+    collapsed,
+}: {
+    items: MenuItem[]
+    pathname: string
+    onNav: (e: React.MouseEvent, href: string) => void
+    collapsed: boolean
+}) {
+    const hasWheel = usePlanFeature('wheel')
+    const hasLoyalty = usePlanFeature('loyalty')
+    const hasCoupons = usePlanFeature('coupons')
+    const hasPrint = usePlanFeature('print')
+
+    const featureMap: Record<PlanFeature, boolean> = {
+        wheel: hasWheel,
+        loyalty: hasLoyalty,
+        coupons: hasCoupons,
+        print: hasPrint,
+        qrcode: true,
+    }
+
+    const visible = items.filter(item => !item.feature || featureMap[item.feature])
+
+    return (
+        <>
+            {visible.map((item) => {
+                const isActive = pathname === item.href
+                return (
+                    <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={(e) => onNav(e, item.href)}
+                        title={collapsed ? item.name : undefined}
+                        className={`flex items-center gap-3 rounded-xl transition-all duration-150 group ${
+                            collapsed ? 'px-0 py-3 justify-center' : 'px-3 py-2.5'
+                        } ${
+                            isActive
+                                ? 'text-[var(--accent)]'
+                                : 'text-[var(--text-muted)] hover:text-[var(--text)]'
+                        }`}
+                    >
+                        <div className={`flex items-center justify-center rounded-lg transition-all flex-shrink-0 ${
+                            collapsed ? 'w-9 h-9' : 'w-7 h-7'
+                        } ${
+                            isActive
+                                ? 'bg-[var(--accent-light)]'
+                                : 'group-hover:bg-[var(--border-subtle)]'
+                        }`}>
+                            <item.icon className={`${collapsed ? 'w-4 h-4' : 'w-4 h-4'} ${
+                                isActive ? 'text-[var(--accent)]' : ''
+                            }`} />
+                        </div>
+                        {!collapsed && (
+                            <span className="text-sm font-medium leading-none">{item.name}</span>
+                        )}
+                    </Link>
+                )
+            })}
+        </>
+    )
+}
 
 export default function Sidebar() {
     const pathname = usePathname()
     const router = useRouter()
     const supabase = createClient()
     const { isDirty, setIsDirty } = useNavigationGuard()
-    const [isOpen, setIsOpen] = useState(false)
+    const { isCollapsed, toggle } = useSidebar()
+    const { theme, toggleTheme } = useTheme()
+    const [isMobileOpen, setIsMobileOpen] = useState(false)
 
     const handleNav = (e: React.MouseEvent, href: string) => {
         if (isDirty) {
             e.preventDefault()
-            const confirmed = confirm('Vous avez des modifications non enregistrées sur cette page. Quitter quand même ?')
+            const confirmed = confirm('Vous avez des modifications non enregistrées. Quitter quand même ?')
             if (confirmed) {
                 setIsDirty(false)
                 router.push(href)
-                setIsOpen(false)
+                setIsMobileOpen(false)
             }
             return
         }
-        setIsOpen(false)
+        setIsMobileOpen(false)
     }
 
     const handleLogout = async () => {
-        if (isDirty) {
-            if (!confirm('Modifications non enregistrées ! Quitter quand même ?')) return
-            setIsDirty(false)
-        }
+        if (isDirty && !confirm('Modifications non enregistrées ! Quitter quand même ?')) return
+        setIsDirty(false)
         await supabase.auth.signOut()
         router.push('/')
         router.refresh()
     }
 
-    const navigation = (
-        <>
-            <div className="p-6 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center relative shadow-sm border border-gray-100 group">
-                        <img src="/logo_avisly.svg" alt="Avisly" className="w-[80%] h-[80%] object-contain group-hover:scale-110 group-hover:rotate-3 transition-all duration-500" />
+    const desktopSidebar = (
+        <aside
+            className={`hidden lg:flex flex-col h-screen fixed left-0 top-0 z-50 border-r transition-[width] duration-300 ease-in-out ${
+                isCollapsed ? 'w-16' : 'w-64'
+            }`}
+            style={{
+                background: 'var(--bg-surface)',
+                borderColor: 'var(--border)',
+            }}
+        >
+            {/* Header */}
+            <div className={`flex items-center h-16 flex-shrink-0 border-b ${
+                isCollapsed ? 'justify-center px-0' : 'justify-between px-4'
+            }`} style={{ borderColor: 'var(--border)' }}>
+                {!isCollapsed && (
+                    <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0"
+                            style={{ background: 'var(--accent-light)' }}>
+                            <img src="/logo_avisly.svg" alt="Avisly" className="w-4 h-4 object-contain" />
+                        </div>
+                        <span className="text-sm font-bold tracking-tight" style={{ color: 'var(--text)' }}>
+                            Avisly
+                        </span>
                     </div>
-                    <h1 className="text-xl font-extrabold text-gray-900 tracking-tight">Avisly</h1>
-                </div>
-                <button onClick={() => setIsOpen(false)} className="lg:hidden p-2 text-gray-500">
-                    <X className="w-6 h-6" />
+                )}
+                <button
+                    onClick={toggle}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors flex-shrink-0"
+                    style={{ color: 'var(--text-faint)' }}
+                    title={isCollapsed ? 'Développer' : 'Réduire'}
+                >
+                    {isCollapsed
+                        ? <ChevronRight className="w-4 h-4" />
+                        : <ChevronLeft className="w-4 h-4" />
+                    }
                 </button>
             </div>
 
-            <nav className="flex-1 px-4 space-y-1 mt-4">
-                {menuItems.map((item) => {
-                    const isActive = pathname === item.href
-                    return (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            onClick={(e) => handleNav(e, item.href)}
-                            className={`flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all ${isActive
-                                ? 'bg-[#f0f0ff] text-[#1d1dd7]'
-                                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                                }`}
-                        >
-                            <item.icon className={`w-5 h-5 ${isActive ? 'text-[#1d1dd7]' : 'text-gray-400'}`} />
-                            {item.name}
-                        </Link>
-                    )
-                })}
+            {/* Nav */}
+            <nav className={`flex-1 py-4 space-y-0.5 overflow-y-auto ${isCollapsed ? 'px-2' : 'px-3'}`}>
+                <FilteredMenu
+                    items={menuItems}
+                    pathname={pathname}
+                    onNav={handleNav}
+                    collapsed={isCollapsed}
+                />
             </nav>
 
-            <div className="p-4 border-t border-gray-100">
+            {/* Footer */}
+            <div className={`py-3 border-t flex flex-col gap-1 ${isCollapsed ? 'px-2' : 'px-3'}`}
+                style={{ borderColor: 'var(--border)' }}>
+                {/* Theme toggle */}
+                <button
+                    onClick={toggleTheme}
+                    title={theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
+                    className={`flex items-center gap-3 rounded-xl transition-all duration-150 group ${
+                        isCollapsed ? 'px-0 py-3 justify-center' : 'px-3 py-2.5'
+                    }`}
+                    style={{ color: 'var(--text-muted)' }}
+                >
+                    <div className={`flex items-center justify-center rounded-lg transition-all flex-shrink-0 group-hover:bg-[var(--border-subtle)] ${
+                        isCollapsed ? 'w-9 h-9' : 'w-7 h-7'
+                    }`}>
+                        {theme === 'dark'
+                            ? <Sun className="w-4 h-4" />
+                            : <Moon className="w-4 h-4" />
+                        }
+                    </div>
+                    {!isCollapsed && (
+                        <span className="text-sm font-medium">
+                            {theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
+                        </span>
+                    )}
+                </button>
+
+                {/* Settings */}
+                <Link
+                    href="/dashboard/settings"
+                    onClick={(e) => handleNav(e, '/dashboard/settings')}
+                    title={isCollapsed ? 'Paramètres' : undefined}
+                    className={`flex items-center gap-3 rounded-xl transition-all duration-150 group ${
+                        isCollapsed ? 'px-0 py-3 justify-center' : 'px-3 py-2.5'
+                    }`}
+                    style={{ color: pathname === '/dashboard/settings' ? 'var(--accent)' : 'var(--text-muted)' }}
+                >
+                    <div className={`flex items-center justify-center rounded-lg transition-all flex-shrink-0 ${
+                        isCollapsed ? 'w-9 h-9' : 'w-7 h-7'
+                    } ${
+                        pathname === '/dashboard/settings'
+                            ? 'bg-[var(--accent-light)]'
+                            : 'group-hover:bg-[var(--border-subtle)]'
+                    }`}>
+                        <Settings className="w-4 h-4" />
+                    </div>
+                    {!isCollapsed && (
+                        <span className="text-sm font-medium">Paramètres</span>
+                    )}
+                </Link>
+
+                {/* Logout */}
                 <button
                     onClick={handleLogout}
-                    className="flex items-center gap-3 w-full px-4 py-3 text-sm font-medium text-gray-600 rounded-xl hover:bg-red-50 hover:text-red-600 transition-all group"
+                    title={isCollapsed ? 'Déconnexion' : undefined}
+                    className={`flex items-center gap-3 rounded-xl transition-all duration-150 group ${
+                        isCollapsed ? 'px-0 py-3 justify-center' : 'px-3 py-2.5'
+                    }`}
+                    style={{ color: 'var(--text-muted)' }}
                 >
-                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm border border-gray-100 group-hover:border-red-100 transition-colors">
-                        <img src="/logo_avisly.svg" alt="Avisly" className="w-5 h-5 object-contain transition-all" />
+                    <div className={`flex items-center justify-center rounded-lg transition-all flex-shrink-0 group-hover:bg-red-50 dark:group-hover:bg-red-950/30 ${
+                        isCollapsed ? 'w-9 h-9' : 'w-7 h-7'
+                    }`}>
+                        <LogOut className="w-4 h-4 group-hover:text-red-500 transition-colors" />
                     </div>
-                    Déconnexion
+                    {!isCollapsed && (
+                        <span className="text-sm font-medium group-hover:text-red-500 transition-colors">
+                            Déconnexion
+                        </span>
+                    )}
                 </button>
             </div>
-        </>
+        </aside>
     )
 
     return (
         <>
-            {/* Header Mobile */}
-            <header className="lg:hidden fixed top-0 w-full z-40 bg-white border-b border-gray-100 h-20 flex items-center justify-between px-6">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center relative shadow-sm border border-gray-100">
-                        <img src="/logo_avisly.svg" alt="Avisly" className="w-[80%] h-[80%] object-contain" />
+            {desktopSidebar}
+
+            {/* Mobile header */}
+            <header className="lg:hidden fixed top-0 w-full z-40 h-14 flex items-center justify-between px-4 border-b"
+                style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
+                <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center overflow-hidden"
+                        style={{ background: 'var(--accent-light)' }}>
+                        <img src="/logo_avisly.svg" alt="Avisly" className="w-4 h-4 object-contain" />
                     </div>
-                    <h1 className="text-xl font-extrabold text-gray-900 tracking-tight">Avisly</h1>
+                    <span className="text-sm font-bold tracking-tight" style={{ color: 'var(--text)' }}>Avisly</span>
                 </div>
-                <button onClick={() => setIsOpen(true)} className="p-2 text-gray-500">
-                    <Menu className="w-6 h-6" />
+                <button onClick={() => setIsMobileOpen(true)} style={{ color: 'var(--text-muted)' }}>
+                    <Menu className="w-5 h-5" />
                 </button>
             </header>
 
-            {/* Desktop Sidebar */}
-            <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-gray-200 h-screen fixed left-0 top-0 z-50">
-                {navigation}
-            </aside>
-
-            {/* Mobile Sidebar Overlay */}
+            {/* Mobile overlay */}
             <AnimatePresence>
-                {isOpen && (
+                {isMobileOpen && (
                     <>
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            onClick={() => setIsOpen(false)}
-                            className="fixed inset-0 bg-black/50 z-50 lg:hidden"
+                            onClick={() => setIsMobileOpen(false)}
+                            className="fixed inset-0 bg-black/40 z-50 lg:hidden"
                         />
                         <motion.aside
                             initial={{ x: '-100%' }}
                             animate={{ x: 0 }}
                             exit={{ x: '-100%' }}
-                            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                            className="fixed inset-y-0 left-0 w-72 bg-white z-50 lg:hidden flex flex-col"
+                            transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+                            className="fixed inset-y-0 left-0 w-72 z-50 lg:hidden flex flex-col border-r"
+                            style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}
                         >
-                            {navigation}
+                            <div className="flex items-center justify-between h-14 px-4 border-b flex-shrink-0"
+                                style={{ borderColor: 'var(--border)' }}>
+                                <div className="flex items-center gap-2.5">
+                                    <div className="w-7 h-7 rounded-lg flex items-center justify-center overflow-hidden"
+                                        style={{ background: 'var(--accent-light)' }}>
+                                        <img src="/logo_avisly.svg" alt="Avisly" className="w-4 h-4 object-contain" />
+                                    </div>
+                                    <span className="text-sm font-bold tracking-tight" style={{ color: 'var(--text)' }}>Avisly</span>
+                                </div>
+                                <button onClick={() => setIsMobileOpen(false)} style={{ color: 'var(--text-muted)' }}>
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+                            <nav className="flex-1 py-4 px-3 space-y-0.5 overflow-y-auto">
+                                <FilteredMenu
+                                    items={menuItems}
+                                    pathname={pathname}
+                                    onNav={handleNav}
+                                    collapsed={false}
+                                />
+                            </nav>
+                            <div className="py-3 px-3 border-t flex flex-col gap-1"
+                                style={{ borderColor: 'var(--border)' }}>
+                                <button
+                                    onClick={toggleTheme}
+                                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group"
+                                    style={{ color: 'var(--text-muted)' }}
+                                >
+                                    <div className="w-7 h-7 flex items-center justify-center rounded-lg group-hover:bg-[var(--border-subtle)]">
+                                        {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                                    </div>
+                                    <span className="text-sm font-medium">
+                                        {theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
+                                    </span>
+                                </button>
+                                <Link
+                                    href="/dashboard/settings"
+                                    onClick={(e) => { handleNav(e, '/dashboard/settings'); setIsMobileOpen(false) }}
+                                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group"
+                                    style={{ color: pathname === '/dashboard/settings' ? 'var(--accent)' : 'var(--text-muted)' }}
+                                >
+                                    <div className={`w-7 h-7 flex items-center justify-center rounded-lg group-hover:bg-[var(--border-subtle)] ${pathname === '/dashboard/settings' ? 'bg-[var(--accent-light)]' : ''}`}>
+                                        <Settings className="w-4 h-4" />
+                                    </div>
+                                    <span className="text-sm font-medium">Paramètres</span>
+                                </Link>
+                                <button
+                                    onClick={handleLogout}
+                                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group"
+                                    style={{ color: 'var(--text-muted)' }}
+                                >
+                                    <div className="w-7 h-7 flex items-center justify-center rounded-lg group-hover:bg-red-50 dark:group-hover:bg-red-950/30">
+                                        <LogOut className="w-4 h-4 group-hover:text-red-500 transition-colors" />
+                                    </div>
+                                    <span className="text-sm font-medium group-hover:text-red-500 transition-colors">
+                                        Déconnexion
+                                    </span>
+                                </button>
+                            </div>
                         </motion.aside>
                     </>
                 )}

@@ -1,8 +1,13 @@
 import Sidebar from '@/components/dashboard/Sidebar'
+import SidebarAwareMain from '@/components/dashboard/SidebarAwareMain'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import SubscriptionGuard from '@/components/dashboard/SubscriptionGuard'
 import { NavigationGuardProvider } from '@/lib/contexts/NavigationGuardContext'
+import { PlanProvider } from '@/lib/contexts/PlanContext'
+import { SidebarProvider } from '@/lib/contexts/SidebarContext'
+import { isValidPlan } from '@/lib/plans'
+import { ThemeProvider } from '@/lib/contexts/ThemeContext'
 
 export default async function DashboardLayout({
     children,
@@ -19,7 +24,7 @@ export default async function DashboardLayout({
 
     const { data: restaurant } = await supabase
         .from('restaurants')
-        .select('id')
+        .select('id, subscription_plan')
         .eq('user_id', user.id)
         .single()
 
@@ -27,18 +32,24 @@ export default async function DashboardLayout({
         redirect('/onboarding')
     }
 
+    const plan = isValidPlan(restaurant.subscription_plan) ? restaurant.subscription_plan : null
+
     return (
-        <NavigationGuardProvider>
-            <div className="min-h-screen bg-gray-50 flex">
-                <Sidebar />
-                <main className="flex-1 lg:ml-64 p-4 md:p-8 pt-24 lg:pt-8 w-full transition-all">
-                    <div className="max-w-6xl mx-auto">
-                        <SubscriptionGuard>
-                            {children}
-                        </SubscriptionGuard>
-                    </div>
-                </main>
-            </div>
-        </NavigationGuardProvider>
+        <ThemeProvider>
+            <PlanProvider plan={plan}>
+                <NavigationGuardProvider>
+                    <SidebarProvider>
+                        <div className="min-h-screen flex" style={{ background: 'var(--bg)' }}>
+                            <Sidebar />
+                            <SidebarAwareMain>
+                                <SubscriptionGuard>
+                                    {children}
+                                </SubscriptionGuard>
+                            </SidebarAwareMain>
+                        </div>
+                    </SidebarProvider>
+                </NavigationGuardProvider>
+            </PlanProvider>
+        </ThemeProvider>
     )
 }

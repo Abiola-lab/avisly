@@ -4,95 +4,121 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  QrCode,
-  HandMetal,
-  ArrowRight,
-  Star,
-  TrendingUp,
-  ShieldCheck,
-  Scan,
-  Trophy,
-  CheckCircle2,
-  Zap,
-  ChevronDown,
-  HelpCircle,
-  Users,
-  MessageSquare,
-  Gift,
-  Clock,
-  Printer,
-  Menu,
-  X
+  QrCode, ArrowRight, Star, ShieldCheck,
+  Trophy, CheckCircle2, ChevronDown, HelpCircle,
+  Gift, Clock, Printer, Menu, X, CreditCard
 } from 'lucide-react'
+
+const PLANS = [
+  {
+    id: 'roue',
+    name: 'Roue',
+    desc: 'Gamification et collecte d\'avis par la roue de la fortune.',
+    monthly: 30,
+    annual: 288,
+    features: [
+      'Roue de la fortune',
+      'Coupons récompenses',
+      'Studio Print (A5, A4)',
+      'Validation coupons en caisse',
+      'QR Code campagne personnalisé',
+    ],
+    highlight: false,
+  },
+  {
+    id: 'fidelite',
+    name: 'Fidélité',
+    desc: 'Carte de fidélité dématérialisée Apple & Google Wallet.',
+    monthly: 40,
+    annual: 384,
+    features: [
+      'Carte de fidélité Wallet',
+      'Collecte contacts (email / SMS)',
+      'Parcours avis Google',
+      'Notifications push de proximité',
+      'QR Code campagne personnalisé',
+    ],
+    highlight: false,
+  },
+  {
+    id: 'full_pro',
+    name: 'Full Pro',
+    desc: 'L\'offre complète pour les restaurants qui veulent tout.',
+    monthly: 60,
+    annual: 576,
+    features: [
+      'Tout de l\'offre Roue',
+      'Tout de l\'offre Fidélité',
+      'Dashboard unifié',
+      'Accès prioritaire nouveautés',
+    ],
+    highlight: true,
+  },
+]
+
+const FAQS = [
+  {
+    q: "Comment fonctionne l'essai gratuit de 7 jours ?",
+    a: "Créez votre compte, configurez votre première campagne et accédez à toutes les fonctionnalités. Si vous n'êtes pas convaincu avant la fin des 7 jours, annulez en un clic sans être débité.",
+  },
+  {
+    q: "Mes clients doivent-ils télécharger une application ?",
+    a: "Non. Tout se passe dans le navigateur de leur smartphone. Ils scannent le QR code, jouent, et sont redirigés vers Google en quelques secondes.",
+  },
+  {
+    q: "Puis-je changer de plan ou annuler à tout moment ?",
+    a: "Oui. Tous nos plans sont sans engagement. Vous changez ou annulez directement depuis votre espace facturation Stripe, accessible depuis les paramètres.",
+  },
+  {
+    q: "Combien de temps faut-il pour configurer une campagne ?",
+    a: "Moins de 2 minutes. Choisissez vos lots, téléchargez votre logo, et votre QR code est prêt à imprimer.",
+  },
+  {
+    q: "Quelle différence entre Roue et Fidélité ?",
+    a: "La Roue mise sur la gamification ponctuelle (un avis = un lot gagné). La Fidélité mise sur le retour régulier (points, Wallet, notifications). Le Full Pro combine les deux.",
+  },
+]
 
 export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
+  const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly')
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
-  const faqs = [
-    {
-      q: "Comment fonctionne l'essai gratuit de 7 jours ?",
-      a: "C'est simple : vous créez votre compte, vous configurez votre première campagne et vous accédez à toutes les fonctionnalités Pro. Si vous n'êtes pas convaincu avant la fin des 7 jours, vous pouvez annuler en un clic sans être débité."
-    },
-    {
-      q: "Mes clients doivent-ils télécharger une application ?",
-      a: "Absolument pas. Tout se passe dans le navigateur de leur smartphone. Ils scannent le QR code, jouent à la roue, et sont redirigés vers Google en quelques secondes."
-    },
-    {
-      q: "Puis-je annuler mon abonnement à tout moment ?",
-      a: "Oui, tous nos abonnements sont sans engagement de durée. Vous pouvez arrêter votre abonnement Pro directement depuis votre dashboard Stripe à tout moment."
-    },
-    {
-      q: "Combien de temps faut-il pour configurer une campagne ?",
-      a: "Moins de 2 minutes. Vous choisissez vos lots (ex: un café offert), vous téléchargez votre logo, et votre QR code est prêt à être imprimé et posé sur vos tables."
-    },
-    {
-      q: "Quelles récompenses puis-je offrir à mes clients ?",
-      a: "C'est vous qui décidez ! Café, dessert, -10% sur l'addition, digestif... Les clients adorent les petites attentions immédiates, c'est le secret pour récolter des avis 5 étoiles."
-    }
-  ]
-
   return (
-    <div className="min-h-screen bg-white text-gray-900 font-sans selection:bg-[#1d1dd7]/10 overflow-x-hidden">
-      {/* Header */}
-      <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100 flex items-center justify-center h-20 px-6">
-        <div className="max-w-7xl w-full flex items-center justify-between">
-          <Link href="#" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg border border-gray-100 group-hover:scale-110 transition-all duration-500 overflow-hidden">
-              <img src="/logo_avisly.svg" alt="Avisly Logo" className="w-[85%] h-[85%] object-contain group-hover:rotate-6 transition-transform" />
+    <div className="min-h-screen bg-white text-gray-900 font-sans overflow-x-hidden">
+
+      {/* Nav */}
+      <nav className="fixed top-0 w-full z-50 bg-white/90 backdrop-blur-xl border-b border-gray-100 h-16 flex items-center px-6">
+        <div className="max-w-6xl w-full mx-auto flex items-center justify-between">
+          <Link href="#" className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden border border-gray-100 shadow-sm">
+              <img src="/logo_avisly.svg" alt="Avisly" className="w-[80%] h-[80%] object-contain" />
             </div>
-            <span className="text-2xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">Avisly</span>
+            <span className="text-base font-bold tracking-tight text-gray-900">Avisly</span>
           </Link>
 
-          {/* Desktop Nav */}
-          <div className="hidden lg:flex items-center gap-10">
-            <Link href="#features" className="text-[10px] font-black text-gray-600 hover:text-[#1d1dd7] transition-colors uppercase tracking-[0.2em]">Fonctionnalités</Link>
-            <Link href="#how-it-works" className="text-[10px] font-black text-gray-600 hover:text-[#1d1dd7] transition-colors uppercase tracking-[0.2em]">Comment ça marche</Link>
-            <Link href="#pricing" className="text-[10px] font-black text-gray-600 hover:text-[#1d1dd7] transition-colors uppercase tracking-[0.2em]">Tarifs</Link>
-            <Link href="#faq" className="text-[10px] font-black text-gray-600 hover:text-[#1d1dd7] transition-colors uppercase tracking-[0.2em]">FAQ</Link>
+          <div className="hidden lg:flex items-center gap-8">
+            {[['#features', 'Fonctionnalités'], ['#how-it-works', 'Comment ça marche'], ['#pricing', 'Tarifs'], ['#faq', 'FAQ']].map(([href, label]) => (
+              <Link key={href} href={href} className="text-sm text-gray-500 hover:text-gray-900 transition-colors">{label}</Link>
+            ))}
           </div>
 
-          <div className="flex items-center gap-4 md:gap-8">
-            <Link href="/login" className="hidden sm:block text-sm font-black text-gray-500 hover:text-[#1d1dd7] transition-colors uppercase tracking-widest whitespace-nowrap">
+          <div className="flex items-center gap-3">
+            <Link href="/login" className="hidden sm:block text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
               Connexion
             </Link>
-            <Link
-              href="/register"
-              className="px-6 md:px-8 py-3 bg-[#1d1dd7] text-white text-[10px] sm:text-sm font-black rounded-2xl hover:bg-[#1515a3] transition-all shadow-xl shadow-[#1d1dd7]/20 active:scale-95 uppercase tracking-widest whitespace-nowrap"
-            >
-              Je commence
+            <Link href="/register"
+              className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-black transition-all">
+              Commencer gratuitement
             </Link>
-            <button
-              className="lg:hidden p-2 text-gray-900"
-              onClick={() => setIsMenuOpen(true)}
-            >
-              <Menu className="w-6 h-6" />
+            <button className="lg:hidden p-1.5" onClick={() => setIsMenuOpen(true)}>
+              <Menu className="w-5 h-5" />
             </button>
           </div>
         </div>
       </nav>
 
-      {/* Mobile Menu Overlay */}
+      {/* Mobile Menu */}
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div
@@ -100,397 +126,285 @@ export default function LandingPage() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed inset-0 bg-white z-[60] flex flex-col p-8 overflow-y-auto"
+            className="fixed inset-0 bg-white z-[60] flex flex-col p-6"
           >
-            <div className="flex items-center justify-between mb-12">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg border border-gray-100">
-                  <img src="/logo_avisly.svg" alt="Avisly Logo" className="w-[85%] h-[85%] object-contain" />
+            <div className="flex items-center justify-between mb-10">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden border border-gray-100">
+                  <img src="/logo_avisly.svg" alt="Avisly" className="w-[80%] h-[80%] object-contain" />
                 </div>
-                <span className="text-2xl font-black tracking-tight">Avisly</span>
+                <span className="text-base font-bold tracking-tight">Avisly</span>
               </div>
-              <button
-                onClick={() => setIsMenuOpen(false)}
-                className="p-2 text-gray-900"
-              >
-                <X className="w-8 h-8" />
+              <button onClick={() => setIsMenuOpen(false)}>
+                <X className="w-6 h-6" />
               </button>
             </div>
-
-            <nav className="flex flex-col gap-8 mb-12">
-              <Link onClick={() => setIsMenuOpen(false)} href="#features" className="text-4xl font-black text-gray-900 tracking-tighter italic">Features</Link>
-              <Link onClick={() => setIsMenuOpen(false)} href="#how-it-works" className="text-4xl font-black text-gray-900 tracking-tighter italic">Process</Link>
-              <Link onClick={() => setIsMenuOpen(false)} href="#pricing" className="text-4xl font-black text-gray-900 tracking-tighter italic">Pricing</Link>
-              <Link onClick={() => setIsMenuOpen(false)} href="#faq" className="text-4xl font-black text-gray-900 tracking-tighter italic">FAQ</Link>
+            <nav className="flex flex-col gap-6 mb-10">
+              {[['#features', 'Fonctionnalités'], ['#how-it-works', 'Comment ça marche'], ['#pricing', 'Tarifs'], ['#faq', 'FAQ']].map(([href, label]) => (
+                <Link key={href} onClick={() => setIsMenuOpen(false)} href={href}
+                  className="text-2xl font-semibold text-gray-900">{label}</Link>
+              ))}
             </nav>
-
-            <div className="flex flex-col gap-4 mt-auto">
-              <Link
-                onClick={() => setIsMenuOpen(false)}
-                href="/login"
-                className="w-full py-6 text-center text-lg font-black text-gray-900 bg-gray-50 rounded-3xl"
-              >
-                CONNEXION
+            <div className="flex flex-col gap-3 mt-auto">
+              <Link onClick={() => setIsMenuOpen(false)} href="/login"
+                className="w-full py-3 text-center text-sm font-medium text-gray-900 border border-gray-200 rounded-lg">
+                Connexion
               </Link>
-              <Link
-                onClick={() => setIsMenuOpen(false)}
-                href="/register"
-                className="w-full py-6 text-center text-lg font-black text-white bg-[#1d1dd7] rounded-3xl shadow-xl shadow-[#1d1dd7]/20"
-              >
-                JE COMMENCE
+              <Link onClick={() => setIsMenuOpen(false)} href="/register"
+                className="w-full py-3 text-center text-sm font-medium text-white bg-gray-900 rounded-lg">
+                Commencer gratuitement
               </Link>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Hero Section */}
-      <section className="relative pt-40 md:pt-48 pb-20 md:pb-32 px-6 overflow-hidden">
-        {/* Background blobs for premium effect */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] pointer-events-none">
-          <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-[#1d1dd7]/5 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2" />
-          <div className="absolute top-1/4 right-0 w-[400px] h-[400px] bg-[#4f46e5]/5 rounded-full blur-[100px] translate-x-1/3" />
+      {/* Hero */}
+      <section className="pt-32 pb-24 px-6 relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-0 left-1/3 w-96 h-96 bg-[#1d1dd7]/4 rounded-full blur-[120px]" />
+          <div className="absolute top-1/4 right-0 w-80 h-80 bg-indigo-100/60 rounded-full blur-[100px]" />
         </div>
+        <div className="max-w-4xl mx-auto text-center relative z-10">
+          <h1 className="text-5xl sm:text-6xl md:text-7xl font-black leading-[0.95] tracking-tighter mb-6">
+            Dopez votre<br />
+            <span className="text-[#1d1dd7]">réputation locale</span><br />
+            par le jeu.
+          </h1>
 
-        <div className="max-w-5xl mx-auto text-center relative z-10 flex flex-col items-center">
-          <div className="space-y-8 md:space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#f0f0ff] rounded-full text-[#1d1dd7] text-[10px] md:text-xs font-black uppercase tracking-[0.1em] border border-[#1d1dd7]/10 mx-auto">
-              <TrendingUp className="w-4 h-4" /> La nouvelle référence pour vos avis Google
+          <p className="text-lg text-gray-500 max-w-xl mx-auto leading-relaxed mb-10">
+            Ne demandez plus d'avis — <span className="text-gray-900 font-semibold">offrez une expérience</span>.
+            Roue de la fortune, carte de fidélité Wallet, QR code personnalisé.
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link href="/register"
+              className="w-full sm:w-auto px-8 py-3.5 bg-gray-900 text-white font-semibold rounded-lg text-sm hover:bg-black transition-all flex items-center justify-center gap-2 group">
+              Essai gratuit 7 jours <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+            </Link>
+            <Link href="#how-it-works"
+              className="w-full sm:w-auto px-8 py-3.5 border border-gray-200 text-gray-700 font-medium rounded-lg text-sm hover:border-gray-300 transition-all text-center">
+              Voir comment ça marche
+            </Link>
+          </div>
+
+          <div className="flex items-center justify-center gap-2 mt-8">
+            {[1,2,3,4,5].map(i => <Star key={i} className="w-4 h-4 text-yellow-400 fill-yellow-400" />)}
+            <span className="text-xs text-gray-400 font-medium ml-1">Conçu pour les restaurateurs français</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Trust bar */}
+      <div className="border-y border-gray-100 py-5 bg-gray-50/50">
+        <div className="max-w-4xl mx-auto px-6 flex flex-wrap justify-center gap-x-12 gap-y-3">
+          {[
+            [ShieldCheck, 'Données sécurisées'],
+            [Clock, 'Setup en 2 minutes'],
+            [Trophy, 'Sans application client'],
+            [CreditCard, 'Sans engagement'],
+          ].map(([Icon, label], i) => (
+            <div key={i} className="flex items-center gap-2 text-xs font-medium text-gray-400">
+              <Icon className="w-3.5 h-3.5" />
+              {label as string}
             </div>
+          ))}
+        </div>
+      </div>
 
-            <h1 className="text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-black leading-[0.95] md:leading-[0.9] tracking-tighter">
-              Dopez votre <br className="hidden sm:block" />
-              <span className="text-[#1d1dd7] italic">SEO Local</span> par le jeu.
-            </h1>
-
-            <p className="text-lg md:text-2xl text-gray-500 font-medium max-w-2xl mx-auto leading-relaxed px-4">
-              Ne demandez plus d'avis, <span className="text-gray-900 font-bold">offrez une expérience</span>.
-              Le premier SaaS qui transforme vos clients en ambassadeurs grâce à la gamification.
+      {/* Features */}
+      <section id="features" className="py-24 bg-white">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-black tracking-tight mb-4">
+              Trois modules. Un seul outil.
+            </h2>
+            <p className="text-gray-500 max-w-xl mx-auto">
+              Choisissez l'offre qui correspond à votre stratégie, ou combinez les deux pour une couverture totale.
             </p>
-
-            <div className="flex flex-col items-center gap-6 md:gap-8 pt-4 w-full">
-              <Link
-                href="/register"
-                className="w-full sm:w-auto px-10 md:px-16 py-6 md:py-8 bg-gray-900 text-white font-black rounded-[2.5rem] text-xl md:text-2xl flex items-center justify-center gap-4 hover:bg-black transition-all shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] active:scale-95 group"
-              >
-                C'EST PARTI <ArrowRight className="w-6 h-6 md:w-8 md:h-8 group-hover:translate-x-2 transition-transform" />
-              </Link>
-
-              <div className="flex flex-col items-center gap-3">
-                <div className="flex gap-1">
-                  {[1, 2, 3, 4, 5].map(i => <Star key={i} className="w-5 h-5 text-yellow-400 fill-yellow-400" />)}
-                </div>
-                <p className="text-sm font-black text-gray-400 uppercase tracking-[0.2em]">Conçu pour et par des restaurateurs français</p>
-              </div>
-            </div>
-
-            {/* Trust logos / Small stats */}
-            <div className="pt-12 flex flex-wrap justify-center gap-x-16 gap-y-8 grayscale opacity-40 font-black text-xs tracking-widest italic border-t border-gray-100 mt-16">
-              <div className="flex items-center gap-3"><Zap className="w-5 h-5 text-[#1d1dd7]" /> EXPÉRIENCE FLUIDE</div>
-              <div className="flex items-center gap-3"><ShieldCheck className="w-5 h-5 text-[#1d1dd7]" /> SÉCURISÉ</div>
-              <div className="flex items-center gap-3"><Clock className="w-5 h-5 text-[#1d1dd7]" /> SETUP 2 MIN</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Pilot Phase / Proof of Concept Section */}
-      <section className="bg-white py-24 border-y border-gray-100">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-16 text-center lg:text-left items-start">
-            <div className="space-y-4">
-              <div className="inline-flex items-center px-3 py-1 bg-blue-50 text-[#1d1dd7] text-[10px] font-black rounded-full uppercase tracking-widest border border-blue-100">Cœur du produit</div>
-              <h3 className="text-2xl font-black text-gray-900 tracking-tighter leading-tight italic">Conçu pour les <br /> restaurants ambitieux.</h3>
-              <p className="text-sm text-gray-400 font-medium leading-relaxed">Une architecture robuste pensée exclusivement pour les besoins du terrain.</p>
-            </div>
-            <div className="space-y-4 border-y md:border-y-0 md:border-x border-gray-100 py-12 md:py-0 md:px-16">
-              <div className="inline-flex items-center px-3 py-1 bg-green-50 text-green-700 text-[10px] font-black rounded-full uppercase tracking-widest border border-green-100">Efficacité locale</div>
-              <h3 className="text-2xl font-black text-gray-900 tracking-tighter leading-tight italic">Optimisé pour la <br /> croissance locale.</h3>
-              <p className="text-sm text-gray-400 font-medium leading-relaxed">Chaque ligne de code est dédiée à votre ascension sur Google Maps.</p>
-            </div>
-            <div className="space-y-4 md:pl-8">
-              <div className="inline-flex items-center px-3 py-1 bg-purple-50 text-purple-700 text-[10px] font-black rounded-full uppercase tracking-widest border border-purple-100">Vision 1.0</div>
-              <h3 className="text-2xl font-black text-gray-900 tracking-tighter leading-tight italic">Un système pensé pour <br /> dédoubler vos avis.</h3>
-              <p className="text-sm text-gray-400 font-medium leading-relaxed">Plus qu'un widget, un véritable accélérateur de réputation digitale.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features / Why Avisly */}
-      <section id="features" className="py-40 bg-[#fafafa]">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center mb-40">
-            <div className="space-y-8">
-              <h2 className="text-5xl font-black tracking-tight leading-tight">
-                C'est prouvé : <br /> <span className="text-[#1d1dd7]">Le jeu</span> bat la demande directe.
-              </h2>
-              <p className="text-lg text-gray-500 font-medium leading-relaxed">
-                90% des clients oublient de laisser un avis, même s'ils sont satisfaits. Avec Avisly, vous transformez cet oubli en un moment de plaisir. L'adrénaline de la roue garantit un taux de conversion 4x supérieur.
-              </p>
-              <div className="space-y-4">
-                {[
-                  { icon: MessageSquare, title: 'Incitations Puissantes', desc: 'Offrez un café ou un dessert pour l\'avis' },
-                  { icon: ShieldCheck, title: 'Filtre de Sécurité', desc: 'Séparez les avis constructifs des avis publics' },
-                  { icon: Users, title: 'Dashboard Complet', desc: 'Suivez vos stats et la performance de votre staff' }
-                ].map((item, i) => (
-                  <div key={i} className="flex gap-4 p-4 hover:bg-white hover:shadow-xl rounded-2xl transition-all border border-transparent hover:border-gray-100 group">
-                    <div className="w-12 h-12 bg-white flex items-center justify-center rounded-xl shadow-sm text-[#1d1dd7] group-hover:scale-110 transition-transform">
-                      <item.icon className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-gray-900">{item.title}</h4>
-                      <p className="text-sm text-gray-500 font-medium">{item.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="space-y-6 pt-0 sm:pt-12">
-                <div className="bg-[#1d1dd7] p-8 rounded-[2rem] sm:rounded-[2.5rem] shadow-xl text-white transform hover:-translate-y-2 transition-transform">
-                  <Star className="w-10 h-10 mb-4 fill-white" />
-                  <p className="text-2xl sm:text-3xl font-black italic">"Incontournable"</p>
-                </div>
-                <div className="bg-white p-8 rounded-[2rem] sm:rounded-[2.5rem] shadow-lg border border-gray-100 transform hover:-translate-y-2 transition-transform">
-                  <p className="text-sm font-bold text-gray-400 mb-4 uppercase tracking-widest italic">Le Petit Bistro</p>
-                  <p className="text-lg font-bold leading-tight">"+45 avis en seulement une semaine de test."</p>
-                </div>
-              </div>
-              <div className="space-y-6">
-                <div className="bg-white p-8 rounded-[2rem] sm:rounded-[2.5rem] shadow-lg border border-gray-100 transform hover:-translate-y-2 transition-transform">
-                  <TrendingUp className="w-8 h-8 text-[#1d1dd7] mb-4" />
-                  <p className="text-lg font-bold leading-tight">"Notre position sur Maps a bondi de la 12ème à la 2ème place."</p>
-                </div>
-                <div className="bg-gray-900 p-8 rounded-[2rem] sm:rounded-[2.5rem] shadow-xl text-white transform hover:-translate-y-2 transition-transform">
-                  <Users className="w-8 h-8 text-[#1d1dd7] mb-4" />
-                  <p className="text-lg font-black leading-tight uppercase">Rejoignez le mouvement.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Steps (Refined) */}
-      <section id="how-it-works" className="py-20 md:py-40 bg-white">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center max-w-2xl mx-auto mb-16 md:mb-24 space-y-4">
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight">Le flow client parfait ⚡️</h2>
-            <p className="text-gray-500 font-medium text-lg">Trois étapes, zéro friction, un avis mémorable.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-16">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {[
               {
-                title: 'Scan Immédiat',
-                desc: 'Le QR code unique sur la table attire l\'oeil. Le scan est instantané, sans rien installer.',
-                icon: QrCode,
-                color: 'blue'
+                icon: Trophy,
+                title: 'Roue de la Fortune',
+                desc: 'Un moment de suspense à chaque passage. Le client tourne la roue pour gagner un lot, et laisse son avis pour le récupérer.',
+                tag: 'Gamification',
               },
               {
-                title: 'La Roue de la Fortune',
-                desc: 'Un moment de suspense ! Le client lance la roue pour découvrir ce qu\'il a gagné.',
-                icon: HandMetal,
-                color: 'indigo'
+                icon: CreditCard,
+                title: 'Carte de Fidélité Wallet',
+                desc: 'Carte dématérialisée Apple Wallet & Google Pay. Points, seuil de récompense, notifications push de proximité.',
+                tag: 'Fidélisation',
               },
               {
-                title: 'Récompense & Avis',
-                desc: 'Pour obtenir son lot, le client laisse sa note. Redirection fluide vers Google Maps.',
-                icon: Gift,
-                color: 'yellow'
-              }
-            ].map((item, i) => (
-              <div key={i} className="relative group">
-                <div className="mb-8 md:mb-10 relative">
-                  <div className={`w-16 h-16 md:w-20 md:h-20 bg-gray-50 rounded-2xl md:rounded-3xl flex items-center justify-center text-[#1d1dd7] shadow-sm transform group-hover:rotate-6 group-hover:scale-110 transition-all duration-300 relative z-10`}>
-                    <item.icon className="w-8 h-8 md:w-10 md:h-10" />
-                  </div>
-                  <div className="absolute top-3 left-3 md:top-4 md:left-4 w-16 h-16 md:w-20 md:h-20 bg-[#1d1dd7]/10 rounded-2xl md:rounded-3xl -z-0 group-hover:rotate-12 transition-transform" />
+                icon: Printer,
+                title: 'Studio Print',
+                desc: 'Créez vos affiches, chevalets et stickers QR code en quelques secondes, directement depuis le dashboard.',
+                tag: 'Communication',
+              },
+            ].map((f, i) => (
+              <div key={i} className="rounded-xl border p-6 space-y-4 hover:shadow-md transition-shadow">
+                <div className="w-10 h-10 rounded-lg bg-gray-50 flex items-center justify-center border border-gray-100">
+                  <f.icon className="w-5 h-5 text-gray-600" />
                 </div>
-                <div className="text-5xl md:text-6xl font-black text-gray-50 absolute -top-8 -right-4 pointer-events-none">{i + 1}</div>
-                <h3 className="text-xl md:text-2xl font-black mb-4">{item.title}</h3>
-                <p className="text-sm md:text-base text-gray-500 font-medium leading-relaxed">{item.desc}</p>
+                <div>
+                  <span className="text-[10px] font-semibold text-[#1d1dd7] uppercase tracking-widest">{f.tag}</span>
+                  <h3 className="text-base font-semibold text-gray-900 mt-1">{f.title}</h3>
+                  <p className="text-sm text-gray-500 mt-2 leading-relaxed">{f.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+        </div>
+      </section>
+
+      {/* How it works */}
+      <section id="how-it-works" className="py-24 bg-gray-50 border-y border-gray-100">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl sm:text-4xl font-black tracking-tight mb-3">Le flow client</h2>
+            <p className="text-gray-500">Trois étapes, zéro friction, un avis mémorable.</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 relative">
+            {[
+              { icon: QrCode, title: 'Scan instantané', desc: 'Un QR code sur la table. Scan sans rien installer, ouverture immédiate dans le navigateur.', n: '01' },
+              { icon: Gift, title: 'Moment de jeu', desc: 'La roue tourne, le lot s\'affiche. L\'adrénaline garantit l\'engagement.', n: '02' },
+              { icon: Star, title: 'Avis & récompense', desc: 'Pour récupérer le lot, le client laisse sa note. Redirection fluide vers Google Maps.', n: '03' },
+            ].map((step, i) => (
+              <div key={i} className="relative text-center">
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl border border-gray-200 bg-white shadow-sm mb-5">
+                  <step.icon className="w-6 h-6 text-[#1d1dd7]" />
+                </div>
+                <p className="absolute top-0 right-0 text-6xl font-black text-gray-100 pointer-events-none leading-none">{step.n}</p>
+                <h3 className="text-base font-semibold text-gray-900 mb-2">{step.title}</h3>
+                <p className="text-sm text-gray-500 leading-relaxed">{step.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Studio Print Section (NEW) */}
-      <section className="py-20 md:py-40 bg-white overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="bg-gray-900 rounded-[2.5rem] md:rounded-[4rem] p-10 md:p-24 relative overflow-hidden group text-center lg:text-left">
-            <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#1d1dd7]/10 rounded-full blur-[120px] translate-x-1/2 -translate-y-1/2" />
-            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-16 md:gap-20 items-center">
-              <div className="space-y-8 md:space-y-10">
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full text-white/80 text-[10px] sm:text-xs font-black uppercase tracking-widest border border-white/10 mx-auto lg:mx-0">
-                  <Printer className="w-4 h-4 text-[#1d1dd7]" /> Studio Print Intégré
-                </div>
-                <h2 className="text-4xl md:text-7xl font-black text-white leading-tight tracking-tighter italic">
-                  Économisez <br /> <span className="text-[#1d1dd7] italic">votre graphisme.</span>
-                </h2>
-                <p className="text-white/50 text-lg md:text-xl font-medium leading-relaxed max-w-lg mx-auto lg:mx-0">
-                  Pourquoi payer un prestataire ou passer des heures sur Canva ? <span className="text-white">Générez vos stickers, chevalets et affiches en 1 clic.</span> Tout est prêt à être imprimé.
-                </p>
-                <div className="flex flex-wrap justify-center lg:justify-start gap-3 md:gap-4 pt-4">
-                  {['Format Chevalet', 'Stickers Caisses', 'Affiches A4', 'Supports DIY'].map(tag => (
-                    <div key={tag} className="px-5 py-2.5 bg-white/5 rounded-xl border border-white/10 text-white/40 text-[9px] sm:text-[10px] font-black uppercase tracking-widest group-hover:border-[#1d1dd7]/30 transition-colors">
-                      {tag}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="relative animate-in fade-in slide-in-from-right-8 duration-1000 hidden sm:block">
-                <div className="absolute inset-0 bg-gradient-to-tr from-[#1d1dd7]/40 to-transparent blur-[80px] rounded-full" />
-                <div className="relative bg-white/5 backdrop-blur-3xl border border-white/10 p-4 rounded-[3.5rem] shadow-3xl rotate-2 hover:rotate-0 transition-transform duration-700 max-w-md mx-auto">
-                  <div className="bg-white/10 rounded-[3rem] aspect-[4/3] flex items-center justify-center p-8 md:p-12">
-                    <div className="flex flex-col items-center gap-4 md:gap-6 text-center">
-                      <div className="w-16 h-16 md:w-24 md:h-24 bg-white rounded-2xl md:rounded-3xl flex items-center justify-center shadow-2xl">
-                        <Printer className="w-8 h-8 md:w-12 md:h-12 text-gray-900" />
-                      </div>
-                      <div className="space-y-2">
-                        <div className="h-1.5 md:h-2 w-24 md:w-32 bg-white/20 rounded-full" />
-                        <div className="h-1.5 md:h-2 w-16 md:w-24 bg-white/10 rounded-full mx-auto" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Pricing */}
-      <section id="pricing" className="py-20 md:py-40 px-6 bg-[#fafafa]">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center max-w-2xl mx-auto mb-12 md:mb-20 space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-50 text-green-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-green-100">
-              ⚡️ Offre de Lancement
+      <section id="pricing" className="py-24 px-6 bg-white">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-600 text-xs font-medium rounded-full border border-green-100 mb-5">
+              7 jours d'essai gratuit — sans carte bancaire
             </div>
-            <h2 className="text-4xl md:text-6xl font-black tracking-tight leading-tight">
-              Prenez de l'avance, <br /> commencez <span className="text-[#1d1dd7]">gratuitement.</span>
+            <h2 className="text-3xl sm:text-4xl font-black tracking-tight mb-3">
+              Choisissez votre offre
             </h2>
-            <p className="text-gray-500 font-medium text-base md:text-lg">
-              Testez toutes les fonctionnalités Pro pendant 7 jours. <br className="hidden md:block" /> Aucune limite pendant votre essai.
-            </p>
+            <p className="text-gray-500 mb-8">Sans engagement. Changez ou annulez à tout moment.</p>
+
+            {/* Billing toggle */}
+            <div className="inline-flex items-center gap-1 p-1 bg-gray-100 rounded-lg">
+              {(['monthly', 'annual'] as const).map(b => (
+                <button key={b} onClick={() => setBilling(b)}
+                  className={`px-5 py-2 rounded-md text-sm font-medium transition-all ${billing === b ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}`}>
+                  {b === 'monthly' ? 'Mensuel' : 'Annuel'}
+                  {b === 'annual' && <span className="ml-2 text-[10px] font-semibold bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">-20%</span>}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 max-w-5xl mx-auto items-stretch">
-            {/* Monthly Plan */}
-            <div className="p-8 md:p-12 bg-white rounded-[2.5rem] md:rounded-[3.5rem] border border-gray-100 shadow-sm hover:shadow-2xl transition-all relative group h-full flex flex-col md:scale-95 md:hover:scale-[0.98]">
-              <div className="mb-8 md:mb-10">
-                <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">Mensuel</h3>
-                <p className="text-gray-400 text-xs md:text-sm font-medium italic">Flexibilité totale, pas d'engagement.</p>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch">
+            {PLANS.map((plan) => {
+              const price = billing === 'monthly' ? plan.monthly : Math.round(plan.annual / 12)
+              const totalAnnual = plan.annual
 
-              <div className="flex items-baseline gap-1 mb-6">
-                <span className="text-5xl md:text-6xl font-black tracking-tighter">29,99€</span>
-                <span className="text-gray-400 font-black tracking-widest uppercase text-[10px]">/ mois</span>
-              </div>
+              return (
+                <div key={plan.id}
+                  className={`relative rounded-xl border p-6 flex flex-col transition-all ${
+                    plan.highlight
+                      ? 'border-[#1d1dd7] shadow-lg shadow-[#1d1dd7]/10'
+                      : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+                  }`}
+                >
+                  {plan.highlight && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-[#1d1dd7] text-white text-[10px] font-semibold rounded-full whitespace-nowrap">
+                      Recommandé
+                    </div>
+                  )}
 
-              <div className="p-4 bg-indigo-50/50 rounded-2xl mb-8 md:mb-10 border border-indigo-100/50">
-                <p className="text-[10px] md:text-xs font-black text-[#1d1dd7] uppercase tracking-widest text-center">✨ 7 jours d'essai offerts</p>
-              </div>
+                  <div className="mb-5">
+                    <h3 className="text-base font-semibold text-gray-900">{plan.name}</h3>
+                    <p className="text-xs text-gray-500 mt-1">{plan.desc}</p>
+                  </div>
 
-              <ul className="space-y-4 md:space-y-5 mb-10 md:mb-12 flex-1">
-                {[
-                  'Campagnes illimitées',
-                  'Fiches QR Personnalisées',
-                  'Filtre Bad-Buzz intégré',
-                  'Support réactif',
-                ].map((feature, i) => (
-                  <li key={i} className="flex items-center gap-3 md:gap-4 text-xs md:text-sm font-bold text-gray-500">
-                    <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-green-500 shrink-0" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
+                  <div className="mb-5">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-3xl font-black text-gray-900">{price}€</span>
+                      <span className="text-xs text-gray-400">/ mois</span>
+                    </div>
+                    {billing === 'annual' && (
+                      <p className="text-xs text-gray-400 mt-0.5">soit {totalAnnual}€ / an</p>
+                    )}
+                  </div>
 
-              <Link
-                href="/register"
-                className="block w-full py-5 md:py-6 bg-gray-900 text-white text-center font-black rounded-[1.5rem] md:rounded-3xl hover:bg-black transition-all hover:shadow-xl shadow-gray-200 active:scale-95 uppercase tracking-widest text-xs md:text-sm"
-              >
-                DÉMARRER MON ESSAI
-              </Link>
-            </div>
+                  <ul className="space-y-2.5 mb-6 flex-1">
+                    {plan.features.map((f, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
+                        <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
 
-            {/* Annual Plan */}
-            <div className="p-8 md:p-12 bg-white rounded-[2.5rem] md:rounded-[3.5rem] border-4 border-[#1d1dd7] shadow-[0_32px_64px_-16px_rgba(29,29,215,0.2)] relative group h-full flex flex-col">
-              <div className="absolute top-4 right-4 md:top-6 md:right-8">
-                <div className="bg-yellow-400 text-gray-900 text-[8px] md:text-[10px] font-black py-2 px-4 md:px-6 rounded-full uppercase tracking-widest shadow-xl -rotate-2">
-                  -15% DE RÉDUCTION
+                  <Link href="/register"
+                    className={`block w-full py-2.5 text-center text-sm font-medium rounded-lg transition-all ${
+                      plan.highlight
+                        ? 'bg-[#1d1dd7] text-white hover:bg-[#1515a3]'
+                        : 'bg-gray-900 text-white hover:bg-black'
+                    }`}>
+                    Démarrer l'essai gratuit
+                  </Link>
                 </div>
-              </div>
-
-              <div className="mb-8 md:mb-10">
-                <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">Annuel</h3>
-                <p className="text-[#1d1dd7] text-xs md:text-sm font-black uppercase tracking-widest">Le choix des leaders 👑</p>
-              </div>
-
-              <div className="flex items-baseline gap-1 mb-6">
-                <span className="text-5xl md:text-6xl font-black tracking-tighter">299,99€</span>
-                <span className="text-gray-400 font-black tracking-widest uppercase text-[10px]">/ an</span>
-              </div>
-
-              <div className="p-4 bg-green-50 rounded-2xl mb-8 md:mb-10 border border-green-100">
-                <p className="text-[10px] md:text-xs font-black text-green-600 uppercase tracking-widest text-center">🔥 7 jours d'essai + 2 mois offerts</p>
-              </div>
-
-              <ul className="space-y-4 md:space-y-5 mb-10 md:mb-12 flex-1">
-                {[
-                  'Toutes les fonctionnalités Pro',
-                  'Économisez 60€ par an',
-                  'Accès Premium Dashboard',
-                  'Conseil SEO inclus (1 call)'
-                ].map((feature, i) => (
-                  <li key={i} className="flex items-center gap-3 md:gap-4 text-xs md:text-sm font-black text-gray-800">
-                    <Zap className="w-4 h-4 md:w-5 md:h-5 text-yellow-500 shrink-0" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-
-              <Link
-                href="/register"
-                className="block w-full py-5 md:py-6 bg-[#1d1dd7] text-white text-center font-black rounded-[1.5rem] md:rounded-3xl hover:bg-[#1515a3] transition-all shadow-2xl shadow-[#1d1dd7]/40 active:scale-95 uppercase tracking-widest text-xs md:text-sm"
-              >
-                S'ABONNER MAINTENANT
-              </Link>
-            </div>
+              )
+            })}
           </div>
+
+          <p className="text-center text-xs text-gray-400 mt-6">
+            Tous les plans incluent 7 jours d'essai · Aucune carte requise · Annulation en 1 clic
+          </p>
         </div>
       </section>
 
-      {/* FAQ Section */}
-      <section id="faq" className="py-20 md:py-40 px-6 bg-white overflow-hidden relative">
-        <div className="max-w-4xl mx-auto relative z-10">
-          <div className="text-center mb-16 md:mb-24 space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-gray-100 text-gray-500 text-[10px] font-black uppercase tracking-widest rounded-full border border-gray-200">
-              <HelpCircle className="w-3 h-3" /> Questions Fréquentes
+      {/* FAQ */}
+      <section id="faq" className="py-24 px-6 bg-gray-50 border-t border-gray-100">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white text-gray-500 text-xs font-medium rounded-full border border-gray-200 mb-5">
+              <HelpCircle className="w-3.5 h-3.5" /> Questions fréquentes
             </div>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tighter">On répond à <span className="text-[#1d1dd7]">tout.</span></h2>
+            <h2 className="text-3xl font-black tracking-tight">On répond à <span className="text-[#1d1dd7]">tout.</span></h2>
           </div>
-
-          <div className="space-y-4">
-            {faqs.map((faq, i) => (
-              <div key={i} className="bg-gray-50 rounded-[1.5rem] md:rounded-[2rem] overflow-hidden border border-gray-100 hover:border-[#1d1dd7]/30 transition-colors">
+          <div className="space-y-3">
+            {FAQS.map((faq, i) => (
+              <div key={i} className="bg-white rounded-xl border border-gray-100 overflow-hidden">
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full p-6 md:p-8 text-left flex items-center justify-between group"
+                  className="w-full px-5 py-4 text-left flex items-center justify-between gap-4 cursor-pointer"
                 >
-                  <span className="text-base md:text-lg font-black tracking-tight transition-colors group-hover:text-[#1d1dd7] pr-4">{faq.q}</span>
-                  <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center bg-white shadow-sm transition-transform duration-300 shrink-0 ${openFaq === i ? 'rotate-180 bg-[#1d1dd7] text-white' : 'group-hover:bg-gray-100'}`}>
-                    <ChevronDown className="w-4 h-4 md:w-5 md:h-5" />
-                  </div>
+                  <span className="text-sm font-semibold text-gray-900 pr-2">{faq.q}</span>
+                  <ChevronDown className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${openFaq === i ? 'rotate-180' : ''}`} />
                 </button>
-                <div className={`transition-all duration-300 ease-in-out ${openFaq === i ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'} overflow-hidden`}>
-                  <div className="px-6 md:px-8 pb-6 md:pb-8 text-sm md:text-base text-gray-500 font-medium leading-relaxed">
-                    {faq.a}
-                  </div>
-                </div>
+                <AnimatePresence>
+                  {openFaq === i && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <p className="px-5 pb-4 text-sm text-gray-500 leading-relaxed">{faq.a}</p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             ))}
           </div>
@@ -498,77 +412,73 @@ export default function LandingPage() {
       </section>
 
       {/* Final CTA */}
-      <section className="py-20 md:py-40 px-6">
-        <div className="max-w-6xl mx-auto bg-gray-900 rounded-[2.5rem] md:rounded-[5rem] p-10 md:p-32 text-center text-white relative overflow-hidden group">
-          <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-[#1d1dd7]/20 rounded-full blur-[120px] translate-x-1/2 translate-y-1/2" />
-          <div className="absolute top-0 left-0 w-96 h-96 bg-white/5 rounded-full blur-3xl -ml-48 -mt-48 group-hover:scale-125 transition-transform duration-1000" />
-
-          <div className="relative z-10 space-y-8 md:space-y-12">
-            <h2 className="text-4xl md:text-7xl font-black leading-tight tracking-tighter italic">
-              Prêt pour une pluie <br className="hidden md:block" /> d'avis 5 étoiles ? ⭐️
+      <section className="py-24 px-6 bg-white">
+        <div className="max-w-3xl mx-auto bg-gray-900 rounded-2xl p-12 text-center text-white relative overflow-hidden">
+          <div className="absolute bottom-0 right-0 w-64 h-64 bg-[#1d1dd7]/20 rounded-full blur-[80px] translate-x-1/2 translate-y-1/2 pointer-events-none" />
+          <div className="relative z-10 space-y-5">
+            <h2 className="text-3xl sm:text-4xl font-black tracking-tight">
+              Prêt pour une pluie d'avis 5 étoiles ?
             </h2>
-            <p className="text-white/60 text-lg md:text-xl font-medium max-w-2xl mx-auto leading-relaxed uppercase tracking-widest text-[10px] md:text-sm px-4">
-              Rejoignez les restaurants les plus influents de votre secteur. <br /> Installation gratuite, résultats garantis.
+            <p className="text-white/60 text-sm leading-relaxed max-w-md mx-auto">
+              Rejoignez les restaurants qui ont choisi la croissance locale par la gamification.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 md:gap-6 justify-center items-center pt-4 md:pt-6 w-full">
-              <Link
-                href="/register"
-                className="w-full sm:w-auto px-10 md:px-14 py-6 md:py-7 bg-[#1d1dd7] text-white font-black rounded-[1.5rem] md:rounded-3xl text-lg md:text-xl hover:bg-[#1515a3] transition-all shadow-2xl shadow-[#1d1dd7]/20 active:scale-95 uppercase tracking-widest"
-              >
-                DÉMARRER MON ESSAI
+            <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+              <Link href="/register"
+                className="px-8 py-3 bg-[#1d1dd7] text-white text-sm font-semibold rounded-lg hover:bg-[#1515a3] transition-all">
+                Commencer gratuitement
+              </Link>
+              <Link href="/login"
+                className="px-8 py-3 bg-white/10 text-white text-sm font-medium rounded-lg hover:bg-white/20 transition-all border border-white/10">
+                Se connecter
               </Link>
             </div>
-            <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 text-white/30 text-[8px] md:text-xs font-black uppercase tracking-[0.2em]">
-              <span>✓ SANS ENGAGEMENT</span>
-              <span className="hidden sm:inline w-1.5 h-1.5 bg-white/20 rounded-full" />
-              <span>✓ 7 JOURS OFFERTS</span>
-              <span className="hidden sm:inline w-1.5 h-1.5 bg-white/20 rounded-full" />
-              <span>✓ SUPPORT 24/7</span>
+            <div className="flex flex-wrap items-center justify-center gap-5 pt-2 text-white/30 text-xs">
+              <span>✓ Sans engagement</span>
+              <span>✓ 7 jours offerts</span>
+              <span>✓ Annulation immédiate</span>
             </div>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-24 bg-white border-t border-gray-100">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-16 mb-20">
-            <div className="col-span-1 md:col-span-2 space-y-8">
-              <div className="flex items-center gap-3 group">
-                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg border border-gray-100 group-hover:scale-110 transition-all duration-500 overflow-hidden">
-                  <img src="/logo_avisly.svg" alt="Avisly Logo" className="w-[85%] h-[85%] object-contain group-hover:rotate-6 transition-transform" />
+      <footer className="py-12 bg-white border-t border-gray-100">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="flex flex-col md:flex-row justify-between gap-10 mb-10">
+            <div className="space-y-3 max-w-xs">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg overflow-hidden border border-gray-100">
+                  <img src="/logo_avisly.svg" alt="Avisly" className="w-full h-full object-contain" />
                 </div>
-                <span className="text-2xl font-black tracking-tight">Avisly</span>
+                <span className="text-sm font-bold text-gray-900">Avisly</span>
               </div>
-              <p className="text-gray-400 font-medium max-w-sm leading-relaxed">
-                Le moteur de croissance locale pour les restaurateurs ambitieux. Transformez chaque passage en caisse en un levier SEO puissant.
+              <p className="text-xs text-gray-400 leading-relaxed">
+                Le moteur de croissance locale pour les restaurateurs ambitieux.
               </p>
             </div>
-            <div className="space-y-6">
-              <h4 className="font-black uppercase tracking-widest text-xs text-gray-900">Produit</h4>
-              <ul className="space-y-4 text-sm font-bold text-gray-600 uppercase tracking-widest">
-                <li><Link href="#features" className="hover:text-[#1d1dd7] transition-colors">Fonctionnalités</Link></li>
-                <li><Link href="#how-it-works" className="hover:text-[#1d1dd7] transition-colors">Comment ça marche</Link></li>
-                <li><Link href="#pricing" className="hover:text-[#1d1dd7] transition-colors">Tarifs</Link></li>
-                <li><Link href="#faq" className="hover:text-[#1d1dd7] transition-colors">FAQ</Link></li>
-              </ul>
-            </div>
-            <div className="space-y-6">
-              <h4 className="font-black uppercase tracking-widest text-xs text-gray-900">Légal</h4>
-              <ul className="space-y-4 text-sm font-bold text-gray-600 uppercase tracking-widest">
-                <li><Link href="#" className="hover:text-[#1d1dd7] transition-colors">Confidentialité</Link></li>
-                <li><Link href="#" className="hover:text-[#1d1dd7] transition-colors">CGV</Link></li>
-                <li><Link href="#" className="hover:text-[#1d1dd7] transition-colors">Mentions</Link></li>
-              </ul>
+
+            <div className="grid grid-cols-2 gap-10 text-sm">
+              <div className="space-y-3">
+                <p className="font-semibold text-xs text-gray-900 uppercase tracking-widest">Produit</p>
+                <ul className="space-y-2 text-gray-500">
+                  <li><Link href="#features" className="hover:text-gray-900 transition-colors">Fonctionnalités</Link></li>
+                  <li><Link href="#pricing" className="hover:text-gray-900 transition-colors">Tarifs</Link></li>
+                  <li><Link href="#faq" className="hover:text-gray-900 transition-colors">FAQ</Link></li>
+                </ul>
+              </div>
+              <div className="space-y-3">
+                <p className="font-semibold text-xs text-gray-900 uppercase tracking-widest">Légal</p>
+                <ul className="space-y-2 text-gray-500">
+                  <li><Link href="#" className="hover:text-gray-900 transition-colors">Confidentialité</Link></li>
+                  <li><Link href="#" className="hover:text-gray-900 transition-colors">CGV</Link></li>
+                  <li><Link href="#" className="hover:text-gray-900 transition-colors">Mentions légales</Link></li>
+                </ul>
+              </div>
             </div>
           </div>
-          <div className="flex flex-col md:flex-row justify-between items-center gap-8 pt-12 border-t border-gray-50">
-            <span className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em]">Avisly © 2026 — Fait avec passion pour les foodies</span>
-            <div className="flex gap-4">
-              <div className="w-8 h-8 bg-gray-50 rounded-lg border border-gray-100" />
-              <div className="w-8 h-8 bg-gray-50 rounded-lg border border-gray-100" />
-              <div className="w-8 h-8 bg-gray-50 rounded-lg border border-gray-100" />
-            </div>
+
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-8 border-t border-gray-100">
+            <span className="text-xs text-gray-300">Avisly © 2026 — Fait avec soin pour les restaurateurs</span>
           </div>
         </div>
       </footer>

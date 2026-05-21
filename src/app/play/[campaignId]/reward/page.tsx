@@ -2,18 +2,29 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useParams } from 'next/navigation'
-import { Trophy, Clock, Check, ExternalLink } from 'lucide-react'
+import { useParams, useRouter } from 'next/navigation'
+import { Trophy, Clock, Check, Star } from 'lucide-react'
 import confetti from 'canvas-confetti'
-
 import { usePostHog } from 'posthog-js/react'
+
+function getOrCreateDeviceFingerprint(): string {
+    const key = 'rv_device_fp'
+    let fp = localStorage.getItem(key)
+    if (!fp) {
+        fp = `${Date.now()}-${Math.random().toString(36).slice(2)}`
+        localStorage.setItem(key, fp)
+    }
+    return fp
+}
 
 export default function RewardPage() {
     const { campaignId } = useParams()
+    const router = useRouter()
     const [data, setData] = useState<any>(null)
     const [timeLeft, setTimeLeft] = useState<number | null>(null)
     const [googleClicked, setGoogleClicked] = useState(false)
     const [finished, setFinished] = useState(false)
+    const [loyaltyCard, setLoyaltyCard] = useState<{ cardCode: string, pointsBalance: number, rewardThreshold: number, isNewCard: boolean } | null>(null)
     const supabase = createClient()
     const posthog = usePostHog()
 
@@ -25,12 +36,28 @@ export default function RewardPage() {
 
             const { data: sessData } = await supabase
                 .from('sessions')
-                .select('*, coupons(*), rewards(label, is_prize), campaigns(restaurants(google_link))')
+                .select('*, coupons(*), rewards(label, is_prize), campaigns(restaurants(google_link, subscription_plan))')
                 .eq('id', sessionId)
                 .single()
 
             if (sessData) {
                 setData(sessData)
+
+                // Create loyalty card non-blocking
+                try {
+                    const deviceFingerprint = getOrCreateDeviceFingerprint()
+                    const res = await fetch('/api/loyalty/create', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ sessionId, deviceFingerprint })
+                    })
+                    if (res.ok) {
+                        const loyaltyData = await res.json()
+                        setLoyaltyCard(loyaltyData)
+                    }
+                } catch {
+                    // Loyalty card creation failure is non-blocking
+                }
 
                 // Timer calculation ONLY if it's a prize and has a coupon
                 if (sessData.rewards?.is_prize && sessData.coupons) {
@@ -81,8 +108,13 @@ export default function RewardPage() {
         })
 
         setGoogleClicked(true)
-        setFinished(true)
         window.open(data?.campaigns?.restaurants?.google_link, '_blank')
+
+        if (loyaltyCard) {
+            router.push(`/loyalty/${loyaltyCard.cardCode}?review=done`)
+        } else {
+            setFinished(true)
+        }
     }
 
     const formatTime = (seconds: number) => {
@@ -98,6 +130,89 @@ export default function RewardPage() {
     if (!data) return <div className="text-white/70 text-center py-20">Récupération de votre gain...</div>
 
     const isPositive = data.rating >= 3
+    const isFideliteOnly = !data.rewards
+
+    const googleButton = (
+        <button
+            onClick={handleGoogleClick}
+            className="w-full bg-white py-5 rounded-[2.5rem] font-black text-lg flex items-center justify-center gap-3 shadow-[0_20px_40px_rgba(0,0,0,0.3)] active:scale-95 transition-all border border-gray-100"
+        >
+            <div className="flex items-center gap-1.5">
+                <span className="text-[#4285F4]">G</span>
+                <span className="text-[#EA4335]">o</span>
+                <span className="text-[#FBBC05]">o</span>
+                <span className="text-[#4285F4]">g</span>
+                <span className="text-[#34A853]">l</span>
+                <span className="text-[#EA4335]">e</span>
+            </div>
+            <span className="text-gray-900 tracking-tighter">PUBLIER MON AVIS</span>
+        </button>
+    )
+
+    if (isFideliteOnly) {
+        return (
+            <div className="flex-1 flex flex-col items-center justify-between py-8 text-white">
+                <div className="text-center w-full px-4">
+                    <Star className="w-16 h-16 text-yellow-400 fill-yellow-400 mx-auto mb-4" />
+                    <h2 className="text-2xl font-black mb-1">MERCI POUR VOTRE VISITE !</h2>
+                    <p className="text-white/60 mb-6 font-medium">Votre avis nous aide à nous améliorer.</p>
+
+                    {loyaltyCard && (
+                        <div className="bg-white/5 border border-white/10 p-6 rounded-[2rem] mb-8 text-center">
+                            <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest mb-1">Votre carte de fidélité</p>
+                            <p className="text-white font-black text-2xl tracking-[0.15em] mb-1">{loyaltyCard.cardCode}</p>
+                            <p className="text-white/40 text-xs">
+                                {loyaltyCard.pointsBalance} / {loyaltyCard.rewardThreshold} points
+                                {loyaltyCard.isNewCard && ' · Carte créée !'}
+                            </p>
+                        </div>
+                    )}
+                </div>
+
+                <div className="w-full space-y-4 px-4">
+                    <div className="text-center px-4">
+                        <p className="text-white/80 font-bold mb-4 text-sm leading-relaxed uppercase tracking-tight">
+                            Un petit avis Google nous aiderait énormément 🙏
+                        </p>
+                    </div>
+                    {googleButton}
+                    <button
+                        onClick={() => {
+                            if (loyaltyCard) {
+                                router.push(`/loyalty/${loyaltyCard.cardCode}`)
+                            } else {
+                                setFinished(true)
+                            }
+                        }}
+                        className="w-full bg-white/10 text-white/70 py-4 rounded-[2rem] font-bold text-sm hover:bg-white/20 transition-all border border-white/5"
+                    >
+                        VOIR MA CARTE DE FIDÉLITÉ
+                    </button>
+                </div>
+
+                {finished && (
+                    <div className="fixed inset-0 bg-[#0a0a0a]/95 backdrop-blur-md z-[100] flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-500">
+                        <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mb-6">
+                            <Check className="w-8 h-8 text-green-500" />
+                        </div>
+                        <h2 className="text-3xl font-black mb-2 italic">MERCI !</h2>
+                        <p className="text-white/60 mb-8 italic leading-relaxed">
+                            À très bientôt et n'oubliez pas votre carte de fidélité !
+                        </p>
+                        <button
+                            onClick={() => {
+                                localStorage.removeItem(`rv_sess_${campaignId}`)
+                                window.location.href = `/play/${campaignId}`
+                            }}
+                            className="px-10 py-5 bg-white text-gray-900 rounded-full font-black text-sm uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-2xl"
+                        >
+                            FERMER
+                        </button>
+                    </div>
+                )}
+            </div>
+        )
+    }
 
     return (
         <div className="flex-1 flex flex-col items-center justify-between py-8 text-white">
@@ -139,11 +254,6 @@ export default function RewardPage() {
             </div>
 
             <div className="w-full space-y-4 px-4">
-                {/* 
-                    Logic:
-                    1. If user won a prize: Always show Google link, but adapt message if rating is low.
-                    2. If user lost: Show Google link ONLY if rating is high (>=4).
-                */}
                 {data.rewards?.is_prize ? (
                     <div className="space-y-4">
                         <div className="text-center px-4">
@@ -153,20 +263,7 @@ export default function RewardPage() {
                                     : "Félicitations pour votre gain ! Votre avis compte pour nous aider à nous améliorer. 🙏"}
                             </p>
                         </div>
-                        <button
-                            onClick={handleGoogleClick}
-                            className="w-full bg-white py-5 rounded-[2.5rem] font-black text-lg flex items-center justify-center gap-3 shadow-[0_20px_40px_rgba(0,0,0,0.3)] active:scale-95 transition-all border border-gray-100"
-                        >
-                            <div className="flex items-center gap-1.5 grayscale-0">
-                                <span className="text-[#4285F4]">G</span>
-                                <span className="text-[#EA4335]">o</span>
-                                <span className="text-[#FBBC05]">o</span>
-                                <span className="text-[#4285F4]">g</span>
-                                <span className="text-[#34A853]">l</span>
-                                <span className="text-[#EA4335]">e</span>
-                            </div>
-                            <span className="text-gray-900 tracking-tighter">PUBLIER MON AVIS</span>
-                        </button>
+                        {googleButton}
                     </div>
                 ) : isPositive ? (
                     <div className="space-y-4">
@@ -175,20 +272,7 @@ export default function RewardPage() {
                                 Dommage pour cette fois... On espère vous revoir très vite ! Un petit avis Google ? 🙏
                             </p>
                         </div>
-                        <button
-                            onClick={handleGoogleClick}
-                            className="w-full bg-white py-5 rounded-[2.5rem] font-black text-lg flex items-center justify-center gap-3 shadow-[0_20px_40px_rgba(0,0,0,0.3)] active:scale-95 transition-all border border-gray-100"
-                        >
-                            <div className="flex items-center gap-1.5">
-                                <span className="text-[#4285F4]">G</span>
-                                <span className="text-[#EA4335]">o</span>
-                                <span className="text-[#FBBC05]">o</span>
-                                <span className="text-[#4285F4]">g</span>
-                                <span className="text-[#34A853]">l</span>
-                                <span className="text-[#EA4335]">e</span>
-                            </div>
-                            <span className="text-gray-900 tracking-tighter">PUBLIER MON AVIS</span>
-                        </button>
+                        {googleButton}
                     </div>
                 ) : (
                     <div className="text-center py-6 px-4 bg-white/5 rounded-3xl border border-white/10">
@@ -198,14 +282,16 @@ export default function RewardPage() {
                     </div>
                 )}
 
-                {/* Final redirection button */}
                 <button
                     onClick={() => {
                         if (isPositive) {
-                            window.location.href = data?.campaigns?.restaurants?.google_link || '#'
+                            handleGoogleClick()
                         } else {
-                            // For bad ratings, simply go back to the welcome page or a thank you state
-                            setFinished(true)
+                            if (loyaltyCard) {
+                                router.push(`/loyalty/${loyaltyCard.cardCode}`)
+                            } else {
+                                setFinished(true)
+                            }
                         }
                     }}
                     className="w-full bg-white/10 text-white/70 py-4 rounded-[2rem] font-bold text-sm hover:bg-white/20 transition-all border border-white/5"

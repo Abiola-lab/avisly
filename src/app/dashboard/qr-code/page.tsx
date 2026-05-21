@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { QRCodeSVG } from 'qrcode.react'
 import { Download, Copy, ExternalLink, QrCode as QrIcon } from 'lucide-react'
+import { usePlanFeature } from '@/lib/contexts/PlanContext'
 
 export default function QRCodePage() {
+    const hasWheel = usePlanFeature('wheel')
     const [campaign, setCampaign] = useState<any>(null)
     const [restaurant, setRestaurant] = useState<any>(null)
     const [loading, setLoading] = useState(true)
@@ -80,7 +82,11 @@ export default function QRCodePage() {
             <div className="p-8 text-center bg-white rounded-2xl border border-dashed border-gray-300">
                 <QrIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                 <h2 className="text-xl font-bold text-gray-900 mb-2">Aucune campagne active</h2>
-                <p className="text-gray-500">Créez une campagne pour générer votre QR code.</p>
+                <p className="text-gray-500">
+                    {hasWheel
+                        ? 'Créez une campagne pour générer votre QR code.'
+                        : 'Activez une campagne depuis votre tableau de bord pour générer votre QR code.'}
+                </p>
             </div>
         )
     }
@@ -143,8 +149,11 @@ export default function QRCodePage() {
                         <ul className="text-sm text-blue-800 space-y-2 list-disc list-inside">
                             <li>Placez ce QR code sur vos tables ou au comptoir.</li>
                             <li>Le client scanne avec son smartphone.</li>
-                            <li><strong>Le lien est permanent</strong> : Même si vous changez vos récompenses, le QR code reste le même !</li>
-                            <li>Vous pouvez activer ou désactiver vos offres à tout moment.</li>
+                            {hasWheel
+                                ? <li>Il tourne la roue, laisse un avis Google et reçoit son gain.</li>
+                                : <li>Il laisse un avis Google et reçoit sa carte de fidélité.</li>
+                            }
+                            <li><strong>Le lien est permanent</strong> : Même si vous modifiez vos réglages, le QR code reste le même.</li>
                         </ul>
                     </div>
                 </div>

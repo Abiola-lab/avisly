@@ -40,11 +40,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr">
+    <html lang="fr" suppressHydrationWarning>
       <PHProvider>
-        <body
-          className={`${inter.variable} font-sans antialiased`}
-        >
+        <body className={`${inter.variable} font-sans antialiased`}>
           <PostHogPageView />
           {children}
         </body>

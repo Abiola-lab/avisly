@@ -443,4 +443,79 @@ Toute divergence doit être validée.
 
 ---
 
-PRD Version: 1.2 (Post-User Test Refinements)
+---
+
+# 14. Module Fidélité — Cartes Wallet (Vision v2.0)
+
+## 14.1 Concept
+
+Avisly intègre un système de cartes de fidélité dématérialisées compatibles Apple Wallet et Google Wallet. Ces cartes complètent le parcours existant en ajoutant une couche de rétention client post-avis.
+
+## 14.2 Architecture des offres
+
+Trois niveaux tarifaires distincts et dissociés :
+
+| Offre | Contenu |
+|---|---|
+| **Fidélité** | QR code + Parcours avis Google + Carte Wallet |
+| **Roue** | QR code + Roue de la fortune + Coupon reward |
+| **Full Pro** | QR code + Roue + Coupon + Carte Wallet |
+
+La roue et la carte de fidélité sont des **modules indépendants**. Chaque restaurateur choisit son offre à la souscription.
+
+## 14.3 Flux client selon l'offre
+
+### Offre Fidélité (sans roue)
+```
+Scan QR → Page d'accueil → Notation Google → Carte Wallet affichée → Ajout au téléphone
+```
+
+### Offre Roue (sans fidélité)
+```
+Scan QR → Roue → Notation obligatoire → Coupon révélé → Redirection Google
+```
+
+### Offre Full Pro
+```
+Scan QR → Roue → Notation obligatoire → Coupon révélé → Carte Wallet → Ajout au téléphone
+```
+
+## 14.4 Logique double engagement
+
+La carte de fidélité est générée **uniquement après** la complétion du parcours (notation Google incluse). Pour récupérer ses crédits au comptoir, le client doit présenter la carte — ce qui garantit qu'il a effectué l'avis Google au préalable.
+
+## 14.5 Fonctionnement de la carte
+
+**Côté client (le mangeur) :**
+- Ajoute la carte depuis son téléphone (Apple Wallet ou Google Wallet).
+- Présente la carte au comptoir à chaque passage.
+- Accumule des points/crédits attribués par le restaurateur.
+- Reçoit des notifications push :
+  - Quand il approche du seuil de gain.
+  - Quand il est dans un périmètre de ~800m du restaurant (géolocalisation).
+
+**Côté restaurateur (dashboard) :**
+- Voir le nombre de cartes actives.
+- Attribuer des points manuellement lors d'un passage comptoir.
+- Configurer les règles de fidélité (ex : 10 points = dessert offert).
+- Envoyer des notifications push ciblées (offres, promotions).
+- Configurer le rayon de géolocalisation pour les notifications de proximité.
+
+## 14.6 Intégration technique
+
+- **Service tiers** : PassKit ou équivalent freemium, couvrant Apple Wallet + Google Wallet.
+- Le pass est généré côté serveur (API Route Next.js) via l'API du service tiers.
+- Le pass contient : logo restaurant, couleur primaire, nom restaurant, solde points, QR code interne.
+
+## 14.7 Impacts sur l'application existante
+
+- **Dashboard** : KPIs et graphiques conditionnels selon l'offre souscrite.
+- **Navigation / Sidebar** : sections Roue et Fidélité conditionnelles à l'offre.
+- **SubscriptionGuard** : distinguer les 3 offres au lieu de l'abonnement unique.
+- **Onboarding Wizard** : adapter les étapes selon l'offre choisie.
+- **Flux `/play`** : rendre le passage par la roue conditionnel.
+- **Studio Print** : adapter le branding si la roue n'est pas incluse dans l'offre.
+
+---
+
+PRD Version: 2.0 (Loyalty Wallet Module — Vision)

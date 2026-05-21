@@ -331,4 +331,115 @@ Ce document est aligné avec :
 
 ---
 
-Version : 1.2 (Post-User Test Refinements)
+---
+
+# 9️⃣ MODULE F — FIDÉLITÉ & CARTES WALLET (Vision v2.0)
+
+---
+
+## F1. Architecture des offres (Pricing)
+
+Trois offres distinctes et dissociées :
+
+| Offre | Modules inclus |
+|---|---|
+| **Fidélité** | QR + Avis Google + Carte Wallet |
+| **Roue** | QR + Roue + Coupon |
+| **Full Pro** | QR + Roue + Coupon + Carte Wallet |
+
+La roue et la carte sont des modules indépendants vendus séparément ou en bundle.
+
+---
+
+## F2. Flux client par offre
+
+### Offre Fidélité
+```
+Scan QR → Page accueil → Notation Google → Carte Wallet → Ajout téléphone
+```
+
+### Offre Roue (flux actuel)
+```
+Scan QR → Roue → Notation obligatoire → Coupon → Redirection Google
+```
+
+### Offre Full Pro
+```
+Scan QR → Roue → Notation obligatoire → Coupon → Carte Wallet → Ajout téléphone
+```
+
+---
+
+## F3. Logique double engagement
+
+La carte de fidélité est générée **après** complétion du parcours (notation Google incluse).
+
+Pour récupérer ses crédits au comptoir, le client doit présenter la carte → garantit que l'avis Google a été déposé au préalable.
+
+---
+
+## F4. Carte Wallet — Fonctionnement
+
+### Côté client (le mangeur)
+- Ajoute la carte à Apple Wallet ou Google Wallet.
+- Présente la carte au comptoir à chaque passage.
+- Accumule des points attribués par le restaurateur.
+- Reçoit des notifications push :
+  - Approche du seuil de gain.
+  - Proximité géographique du restaurant (~800m).
+
+### Côté restaurateur (dashboard)
+- Voir le nombre de cartes actives.
+- Attribuer des points manuellement.
+- Configurer les règles de fidélité.
+- Envoyer des notifications push ciblées.
+- Configurer le rayon de géolocalisation.
+
+---
+
+## F5. Intégration technique
+
+- **Service tiers** : PassKit ou équivalent freemium (Apple Wallet + Google Wallet simultanément).
+- Génération du pass côté serveur (API Route Next.js) via l'API du service tiers.
+- Contenu du pass : logo restaurant, couleur primaire, nom, solde points, QR code interne.
+
+---
+
+## F6. Impacts sur l'application existante
+
+Les éléments suivants devront être refactorisés :
+
+- **Dashboard** : KPIs et graphiques conditionnels selon l'offre souscrite.
+- **Sidebar / Navigation** : sections conditionnelles (Roue masquée si offre Fidélité seule).
+- **SubscriptionGuard** : distinguer les 3 offres.
+- **Onboarding Wizard** : adapter les étapes selon l'offre choisie.
+- **Flux `/play`** : rendre le passage par la roue conditionnel.
+- **Studio Print** : adapter le branding si la roue n'est pas incluse.
+
+---
+
+# 🗺️ ROADMAP
+
+## Implémenté (v1.2)
+- [x] Auth complète
+- [x] Onboarding Wizard
+- [x] Dashboard KPIs + graphiques + ROI + Bad Buzz
+- [x] Gestion campagnes + roue + lots (drag & drop, probabilité, couleurs)
+- [x] Moteur de jeu serveur (spin, anti-fraude, coupon)
+- [x] QR Code + Studio Print A5
+- [x] Validation coupons + historique
+- [x] Paramètres restaurant (logo, couleur, panier moyen)
+- [x] Stripe (trial, mensuel/annuel, portail, webhooks)
+- [x] Social Proof, haptique, sons
+
+## À construire (v2.0)
+- [ ] Module carte de fidélité Wallet (Apple + Google) via service tiers
+- [ ] Système de points/crédits — dashboard restaurateur
+- [ ] Notifications push Wallet (seuil de gain + proximité géo ~800m)
+- [ ] Nouveaux plans tarifaires (Fidélité / Roue / Full Pro)
+- [ ] UI conditionnelle selon plan (dashboard, sidebar, wizard, play flow)
+- [ ] Refonte flux `/play` pour roue optionnelle
+
+---
+
+Version : 2.0 (Loyalty Wallet Module — Vision)

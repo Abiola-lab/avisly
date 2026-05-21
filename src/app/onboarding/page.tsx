@@ -22,24 +22,13 @@ export default function OnboardingPage() {
             if (!user) throw new Error('Utilisateur non trouvé')
 
             // 1. Créer le restaurant
-            const { data: restaurant, error: restError } = await supabase
+            const { error: restError } = await supabase
                 .from('restaurants')
                 .insert([{ user_id: user.id, name, address, google_link: googleLink }])
                 .select()
                 .single()
 
             if (restError) throw restError
-
-            // 2. Créer la campagne par défaut
-            const { error: campError } = await supabase
-                .from('campaigns')
-                .insert([{
-                    restaurant_id: restaurant.id,
-                    name: 'Campagne par défaut',
-                    is_active: true
-                }])
-
-            if (campError) throw campError
 
             router.push('/dashboard')
             router.refresh()
@@ -56,7 +45,7 @@ export default function OnboardingPage() {
                 <div className="w-full p-8 md:p-12">
                     <div className="mb-8">
                         <h1 className="text-3xl font-extrabold text-gray-900 mb-2">Configurons votre restaurant</h1>
-                        <p className="text-gray-500 font-medium">Quelques informations pour commencer à booster vos avis.</p>
+                        <p className="text-gray-600 font-medium">Quelques informations pour commencer à booster vos avis.</p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
@@ -64,11 +53,11 @@ export default function OnboardingPage() {
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-1">Nom du restaurant</label>
                                 <div className="relative">
-                                    <Store className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+                                    <Store className="absolute left-3 top-3.5 w-5 h-5 text-gray-500" />
                                     <input
                                         required
                                         type="text"
-                                        className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1d1dd7] focus:border-transparent outline-none transition-all font-medium placeholder-gray-500"
+                                        className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 focus:ring-2 focus:ring-[#1d1dd7] focus:border-transparent outline-none transition-all font-medium placeholder-gray-400"
                                         placeholder="ex: Le Petit Bistro"
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
@@ -79,11 +68,11 @@ export default function OnboardingPage() {
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-1">Adresse</label>
                                 <div className="relative">
-                                    <MapPin className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+                                    <MapPin className="absolute left-3 top-3.5 w-5 h-5 text-gray-500" />
                                     <input
                                         required
                                         type="text"
-                                        className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1d1dd7] focus:border-transparent outline-none transition-all font-medium placeholder-gray-500"
+                                        className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 focus:ring-2 focus:ring-[#1d1dd7] focus:border-transparent outline-none transition-all font-medium placeholder-gray-400"
                                         placeholder="8 rue de la Paix, 75001 Paris"
                                         value={address}
                                         onChange={(e) => setAddress(e.target.value)}
@@ -94,17 +83,17 @@ export default function OnboardingPage() {
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-1">Lien Google Business Profile</label>
                                 <div className="relative">
-                                    <LinkIcon className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+                                    <LinkIcon className="absolute left-3 top-3.5 w-5 h-5 text-gray-500" />
                                     <input
                                         required
                                         type="url"
-                                        className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1d1dd7] focus:border-transparent outline-none transition-all font-medium placeholder-gray-500"
+                                        className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 focus:ring-2 focus:ring-[#1d1dd7] focus:border-transparent outline-none transition-all font-medium placeholder-gray-400"
                                         placeholder="https://g.page/r/your-id/review"
                                         value={googleLink}
                                         onChange={(e) => setGoogleLink(e.target.value)}
                                     />
                                 </div>
-                                <p className="mt-2 text-xs text-gray-400">Le lien direct vers votre page d'avis Google.</p>
+                                <p className="mt-2 text-xs text-gray-500">Le lien direct vers votre page d'avis Google.</p>
                             </div>
                         </div>
 

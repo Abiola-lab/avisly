@@ -33,50 +33,49 @@ export async function POST(req: Request) {
 
         const { data: restaurant } = await supabase
             .from('restaurants')
-            .select('id, name, stripe_customer_id')
+            .select('id')
             .eq('user_id', user.id)
             .single();
 
         if (!restaurant) return NextResponse.json({ error: 'Restaurant non trouvé' }, { status: 404 });
 
-        const { data: existingSub } = await supabase
+        const { data: sub } = await supabase
             .from('subscriptions')
-            .select('id')
+            .select('stripe_subscription_id')
             .eq('restaurant_id', restaurant.id)
-            .maybeSingle();
+            .single();
 
-        const hasHadTrial = !!existingSub;
+        if (!sub?.stripe_subscription_id) {
+            return NextResponse.json({ error: 'Aucun abonnement actif trouvé' }, { status: 400 });
+        }
 
-        const session = await stripe.checkout.sessions.create({
-            mode: 'subscription',
-            payment_method_types: ['card'],
-            customer: restaurant.stripe_customer_id || undefined,
-            customer_email: restaurant.stripe_customer_id ? undefined : user.email,
-            line_items: [{ price: priceId, quantity: 1 }],
-            subscription_data: {
-                trial_period_days: hasHadTrial ? undefined : 7,
-                metadata: {
-                    restaurantId: restaurant.id,
-                    userId: user.id,
-                    plan,
-                }
-            },
-            allow_promotion_codes: true,
-            success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/settings?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/settings`,
-            metadata: {
-                restaurantId: restaurant.id,
-                userId: user.id,
-                plan,
-            }
+        const stripeSub = await stripe.subscriptions.retrieve(sub.stripe_subscription_id);
+        const currentItemId = stripeSub.items.data[0].id;
+
+        await stripe.subscriptions.update(sub.stripe_subscription_id, {
+            items: [{ id: currentItemId, price: priceId }],
+            proration_behavior: 'create_prorations',
+            metadata: { plan, restaurantId: restaurant.id, userId: user.id },
         });
 
-        return NextResponse.json({ url: session.url });
+        // Update immediately in Supabase — webhook will also fire and confirm
+        await supabase
+            .from('restaurants')
+            .update({ subscription_plan: plan })
+            .eq('id', restaurant.id);
+
+        await supabase
+            .from('subscriptions')
+            .update({ plan_id: priceId })
+            .eq('restaurant_id', restaurant.id);
+
+        return NextResponse.json({ success: true });
 
     } catch (error: any) {
-        console.error('Stripe Checkout Error:', error);
-        return NextResponse.json({
-            error: error.message || 'Erreur lors de la création de la session de paiement'
-        }, { status: 500 });
+        console.error('Stripe Switch Plan Error:', error);
+        return NextResponse.json(
+            { error: error.message || 'Erreur lors du changement de plan' },
+            { status: 500 }
+        );
     }
 }
