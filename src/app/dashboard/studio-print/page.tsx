@@ -66,8 +66,8 @@ export default function StudioPrintPage() {
     }, []);
 
     const updateCampaignPalette = async (newPalette: Palette) => {
-        if (!campaignId) return;
         setPalette(newPalette);
+        if (!campaignId) return;
         setSaving(true);
         try {
             await supabase.from('campaigns').update({
@@ -263,8 +263,7 @@ function FlyerContent({ design, palette, logoUrl, restaurantName, gameUrl }: {
             <div className="w-full flex-1 flex flex-col items-center justify-between relative z-10 py-10 px-10">
                 <div className="h-20 w-full flex items-center justify-center shrink-0 mb-4 px-6">
                     {logoUrl ? (
-                        <img src={logoUrl} alt={restaurantName} className="max-h-full max-w-[260px] object-contain"
-                            style={{ filter: palette.secondary === '#ffffff' ? 'brightness(0) invert(1)' : 'none' }} />
+                        <img src={logoUrl} alt={restaurantName} className="max-h-full max-w-[260px] object-contain" />
                     ) : (
                         <p className="font-black text-3xl tracking-[0.2em] uppercase" style={{ color: palette.secondary }}>
                             {restaurantName}

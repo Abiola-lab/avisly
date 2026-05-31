@@ -5,6 +5,7 @@ import {
     Search, CheckCircle2, XCircle, Loader2,
     Plus, Minus, Save, AlertCircle, User, CreditCard
 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
 interface CardResult {
     cardCode: string
@@ -107,6 +108,10 @@ export default function LoyaltyPage() {
     const [stats, setStats] = useState<ProgramStats | null>(null)
     const [savingProgram, setSavingProgram] = useState(false)
     const [programStatus, setProgramStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+    const [loyaltyCardEnabled, setLoyaltyCardEnabled] = useState(true)
+    const [togglingCard, setTogglingCard] = useState(false)
+
+    const supabase = createClient()
 
     const fetchProgramAndStats = useCallback(async () => {
         const res = await fetch('/api/loyalty/program')
@@ -114,6 +119,16 @@ export default function LoyaltyPage() {
         const data = await res.json()
         if (data.program) setProgram(data.program)
         if (data.stats) setStats(data.stats)
+
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+            const { data: rest } = await supabase
+                .from('restaurants')
+                .select('loyalty_card_enabled')
+                .eq('user_id', user.id)
+                .single()
+            if (rest) setLoyaltyCardEnabled(rest.loyalty_card_enabled !== false)
+        }
     }, [])
 
     useEffect(() => { fetchProgramAndStats() }, [fetchProgramAndStats])
@@ -210,6 +225,22 @@ export default function LoyaltyPage() {
         }
     }
 
+    const handleToggleLoyaltyCard = async () => {
+        setTogglingCard(true)
+        try {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) return
+            const newValue = !loyaltyCardEnabled
+            await supabase
+                .from('restaurants')
+                .update({ loyalty_card_enabled: newValue })
+                .eq('user_id', user.id)
+            setLoyaltyCardEnabled(newValue)
+        } finally {
+            setTogglingCard(false)
+        }
+    }
+
     const handleSaveProgram = async () => {
         if (!program) return
         setSavingProgram(true)
@@ -240,6 +271,31 @@ export default function LoyaltyPage() {
                 <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
                     Attribuez des points à vos clients et gérez votre programme.
                 </p>
+            </div>
+
+            {/* Toggle carte de fidélité */}
+            <div className="rounded-xl border p-4 flex items-center justify-between gap-4"
+                style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
+                <div>
+                    <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+                        Afficher la carte de fidélité aux clients
+                    </p>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                        Si désactivé, la carte ne sera pas proposée à la fin du parcours client.
+                    </p>
+                </div>
+                <button
+                    onClick={handleToggleLoyaltyCard}
+                    disabled={togglingCard}
+                    className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 focus:outline-none disabled:opacity-50 ${
+                        loyaltyCardEnabled ? 'bg-[var(--accent)]' : 'bg-[var(--border)]'
+                    }`}
+                    style={loyaltyCardEnabled ? {} : { background: 'var(--text-faint)' }}
+                >
+                    <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                        loyaltyCardEnabled ? 'translate-x-5' : 'translate-x-0'
+                    }`} />
+                </button>
             </div>
 
             {/* Stats */}

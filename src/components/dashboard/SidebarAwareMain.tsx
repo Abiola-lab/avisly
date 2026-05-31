@@ -1,6 +1,7 @@
 'use client'
 
 import { useSidebar } from '@/lib/contexts/SidebarContext'
+import TrialBanner from '@/components/dashboard/TrialBanner'
 
 export default function SidebarAwareMain({ children }: { children: React.ReactNode }) {
     const { isCollapsed } = useSidebar()
@@ -9,6 +10,7 @@ export default function SidebarAwareMain({ children }: { children: React.ReactNo
             isCollapsed ? 'lg:ml-16' : 'lg:ml-64'
         }`}>
             <div className="max-w-6xl mx-auto">
+                <TrialBanner />
                 {children}
             </div>
         </main>

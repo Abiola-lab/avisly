@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter, usePathname } from 'next/navigation';
 import { Loader2, Lock } from 'lucide-react';
-import { usePlan } from '@/lib/contexts/PlanContext';
+import { usePlan, useTrialEndsAt } from '@/lib/contexts/PlanContext';
 import { planHasFeature } from '@/lib/plans';
 import type { PlanFeature } from '@/lib/plans';
 
@@ -23,6 +23,7 @@ export default function SubscriptionGuard({ children }: { children: React.ReactN
     const router = useRouter();
     const pathname = usePathname();
     const plan = usePlan();
+    const trialEndsAt = useTrialEndsAt();
 
     useEffect(() => {
         if (EXEMPT_PATHS.includes(pathname)) {
@@ -42,14 +43,23 @@ export default function SubscriptionGuard({ children }: { children: React.ReactN
 
             if (!restaurant) { router.push('/onboarding'); return; }
 
-            const { data: sub } = await supabase
-                .from('subscriptions')
-                .select('status')
-                .eq('restaurant_id', restaurant.id)
-                .single();
+            if (plan === null) {
+                // No plan = app-level trial. Check if trial has expired.
+                if (trialEndsAt && new Date() > trialEndsAt) {
+                    setStatus('invalid');
+                    return;
+                }
+                // Trial still active (or no trial_ends_at = legacy account) → all features open
+            } else {
+                const { data: sub } = await supabase
+                    .from('subscriptions')
+                    .select('status')
+                    .eq('restaurant_id', restaurant.id)
+                    .single();
 
-            const isSubscribed = sub && (sub.status === 'active' || sub.status === 'trialing');
-            if (!isSubscribed) { setStatus('invalid'); return; }
+                const isSubscribed = sub && (sub.status === 'active' || sub.status === 'trialing');
+                if (!isSubscribed) { setStatus('invalid'); return; }
+            }
 
             const requiredFeature = ROUTE_FEATURE_MAP[pathname];
             if (requiredFeature && !planHasFeature(plan, requiredFeature)) {
@@ -61,7 +71,7 @@ export default function SubscriptionGuard({ children }: { children: React.ReactN
         }
 
         checkSubscription();
-    }, [pathname, plan]);
+    }, [pathname, plan, trialEndsAt]);
 
     if (status === 'loading') {
         return (
@@ -79,9 +89,14 @@ export default function SubscriptionGuard({ children }: { children: React.ReactN
                     <Lock className="w-7 h-7" style={{ color: 'var(--accent)' }} />
                 </div>
                 <div className="max-w-md space-y-2">
-                    <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: 'var(--text)' }}>Abonnement requis</h2>
+                    <h2 className="text-xl font-black uppercase tracking-tight" style={{ color: 'var(--text)' }}>
+                        {plan === null ? 'Essai terminé' : 'Abonnement requis'}
+                    </h2>
                     <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                        Votre essai est peut-être terminé ou votre paiement a échoué.
+                        {plan === null
+                            ? 'Votre période d\'essai de 7 jours est terminée. Choisissez un plan pour continuer.'
+                            : 'Votre abonnement est peut-être expiré ou votre paiement a échoué.'
+                        }
                     </p>
                 </div>
                 <button
@@ -89,7 +104,7 @@ export default function SubscriptionGuard({ children }: { children: React.ReactN
                     className="px-6 py-3 text-white font-bold rounded-xl text-sm transition-all hover:opacity-90"
                     style={{ background: 'var(--accent)' }}
                 >
-                    Voir les offres
+                    Choisir un plan
                 </button>
             </div>
         );

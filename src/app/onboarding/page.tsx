@@ -10,30 +10,42 @@ export default function OnboardingPage() {
     const [address, setAddress] = useState('')
     const [googleLink, setGoogleLink] = useState('')
     const [loading, setLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
     const router = useRouter()
     const supabase = createClient()
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setLoading(true)
+        setError(null)
 
         try {
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) throw new Error('Utilisateur non trouvé')
 
-            // 1. Créer le restaurant
-            const { error: restError } = await supabase
+            // 1. Créer le restaurant — upsert sur user_id pour éviter les doublons
+            const { data: newRestaurant, error: restError } = await supabase
                 .from('restaurants')
-                .insert([{ user_id: user.id, name, address, google_link: googleLink }])
+                .upsert([{ user_id: user.id, name, address, google_link: googleLink }], {
+                    onConflict: 'user_id',
+                })
                 .select()
                 .single()
 
             if (restError) throw restError
 
+            // 2. Ajouter trial_ends_at séparément (non bloquant si colonne pas encore reconnue)
+            const trialEndsAt = new Date()
+            trialEndsAt.setDate(trialEndsAt.getDate() + 7)
+            await supabase
+                .from('restaurants')
+                .update({ trial_ends_at: trialEndsAt.toISOString() })
+                .eq('id', newRestaurant.id)
+
             router.push('/dashboard')
             router.refresh()
         } catch (err: any) {
-            alert(err.message)
+            setError(err.message)
         } finally {
             setLoading(false)
         }
@@ -97,12 +109,20 @@ export default function OnboardingPage() {
                             </div>
                         </div>
 
+                        {error && (
+                            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                                {error}
+                            </p>
+                        )}
+
                         <button
                             disabled={loading}
                             type="submit"
                             className="w-full bg-[#1d1dd7] text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#1515a3] transition-all disabled:opacity-50"
                         >
-                            C'est parti <ArrowRight className="w-5 h-5" />
+                            {loading ? 'Création en cours...' : (
+                                <>C&apos;est parti <ArrowRight className="w-5 h-5" /></>
+                            )}
                         </button>
                     </form>
                 </div>

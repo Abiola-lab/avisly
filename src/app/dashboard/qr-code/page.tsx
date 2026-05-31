@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { QRCodeSVG } from 'qrcode.react'
-import { Download, Copy, ExternalLink, QrCode as QrIcon } from 'lucide-react'
+import { Download, Copy, ExternalLink, QrCode as QrIcon, ArrowRight } from 'lucide-react'
+import Link from 'next/link'
 import { usePlanFeature } from '@/lib/contexts/PlanContext'
 
 export default function QRCodePage() {
@@ -68,7 +69,7 @@ export default function QRCodePage() {
             ctx?.drawImage(img, 0, 0)
             const pngFile = canvas.toDataURL('image/png')
             const downloadLink = document.createElement('a')
-            downloadLink.download = `qr-code-${campaign.name}.png`
+            downloadLink.download = `qr-code-${campaign?.name ?? 'avisly'}.png`
             downloadLink.href = pngFile
             downloadLink.click()
         }
@@ -77,16 +78,11 @@ export default function QRCodePage() {
 
     if (loading) return <div className="p-8 text-center text-gray-500">Chargement...</div>
 
-    if (!campaign) {
+    if (!restaurant) {
         return (
-            <div className="p-8 text-center bg-white rounded-2xl border border-dashed border-gray-300">
-                <QrIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <h2 className="text-xl font-bold text-gray-900 mb-2">Aucune campagne active</h2>
-                <p className="text-gray-500">
-                    {hasWheel
-                        ? 'Créez une campagne pour générer votre QR code.'
-                        : 'Activez une campagne depuis votre tableau de bord pour générer votre QR code.'}
-                </p>
+            <div className="p-8 text-center rounded-2xl border border-dashed" style={{ borderColor: 'var(--border)' }}>
+                <QrIcon className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--text-faint)' }} />
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Restaurant introuvable.</p>
             </div>
         )
     }
@@ -156,6 +152,21 @@ export default function QRCodePage() {
                             <li><strong>Le lien est permanent</strong> : Même si vous modifiez vos réglages, le QR code reste le même.</li>
                         </ul>
                     </div>
+
+                    {hasWheel && !campaign && (
+                        <div className="p-4 rounded-xl border border-orange-200 bg-orange-50 flex items-start justify-between gap-3">
+                            <div>
+                                <p className="text-sm font-semibold text-orange-800">Roue non configurée</p>
+                                <p className="text-xs text-orange-700 mt-0.5">
+                                    Le QR code est prêt, mais vos clients ne verront pas de roue tant qu'aucune campagne n'est active.
+                                </p>
+                            </div>
+                            <Link href="/dashboard/campaigns"
+                                className="text-xs font-bold text-orange-700 hover:text-orange-900 flex items-center gap-1 flex-shrink-0 mt-0.5">
+                                Configurer <ArrowRight className="w-3 h-3" />
+                            </Link>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

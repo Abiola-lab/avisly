@@ -43,20 +43,23 @@ export default function RewardPage() {
             if (sessData) {
                 setData(sessData)
 
-                // Create loyalty card non-blocking
-                try {
-                    const deviceFingerprint = getOrCreateDeviceFingerprint()
-                    const res = await fetch('/api/loyalty/create', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ sessionId, deviceFingerprint })
-                    })
-                    if (res.ok) {
-                        const loyaltyData = await res.json()
-                        setLoyaltyCard(loyaltyData)
+                // Create loyalty card non-blocking — only if enabled for this restaurant
+                const loyaltyEnabled = localStorage.getItem(`rv_loyalty_${campaignId}`) !== 'false'
+                if (loyaltyEnabled) {
+                    try {
+                        const deviceFingerprint = getOrCreateDeviceFingerprint()
+                        const res = await fetch('/api/loyalty/create', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ sessionId, deviceFingerprint })
+                        })
+                        if (res.ok) {
+                            const loyaltyData = await res.json()
+                            setLoyaltyCard(loyaltyData)
+                        }
+                    } catch {
+                        // Loyalty card creation failure is non-blocking
                     }
-                } catch {
-                    // Loyalty card creation failure is non-blocking
                 }
 
                 // Timer calculation ONLY if it's a prize and has a coupon

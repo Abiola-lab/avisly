@@ -45,7 +45,7 @@ export default function InstallationWizard({ restaurant, campaign, rewardCount, 
             id: 'print',
             title: 'QR Code prêt',
             description: 'Téléchargez et affichez votre QR code en salle',
-            isCompleted: !!campaign,
+            isCompleted: hasWheel ? !!campaign : !!(restaurant?.name),
             icon: QrIcon,
             href: '/dashboard/qr-code'
         }

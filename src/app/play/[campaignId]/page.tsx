@@ -25,7 +25,7 @@ export default function PlayLandingPage() {
 
                 const { data: campaignData, error: campError } = await supabase
                     .from('campaigns')
-                    .select('*, restaurants(*)')
+                    .select('*, restaurants(*, loyalty_card_enabled)')
                     .eq('id', campaignId)
                     .single()
 
@@ -39,6 +39,10 @@ export default function PlayLandingPage() {
 
                 const restaurantPlan = campaignData.restaurants?.subscription_plan
                 setPlan(isValidPlan(restaurantPlan) ? restaurantPlan : null)
+
+                // Store loyalty toggle so reward page can read it without extra DB query
+                const loyaltyEnabled = campaignData.restaurants?.loyalty_card_enabled !== false
+                localStorage.setItem(`rv_loyalty_${campaignId}`, String(loyaltyEnabled))
 
                 const res = await fetch('/api/game/init', {
                     method: 'POST',

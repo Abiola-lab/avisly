@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Store, MapPin, Link as LinkIcon, Save, Loader2, AlertCircle, CheckCircle2, Upload, Image as ImageIcon, Palette, CreditCard, Coins, Undo2, Trophy, Star, Zap, ChevronDown, ChevronUp, ExternalLink, Info } from 'lucide-react'
 import { useNavigationGuard } from '@/lib/contexts/NavigationGuardContext'
@@ -31,7 +32,7 @@ const PLAN_CONFIG: { plan: PlanType; label: string; icon: React.ElementType; fea
 
 function SubscriptionSection({
     subscription, subLoading, canDebug,
-    onSubscribe, onSwitchPlan, onPortal, onReset, onTrialEndDebug
+    onSubscribe, onSwitchPlan, onPortal, onReset, onFullReset, onTrialEndDebug
 }: {
     subscription: any
     subLoading: boolean
@@ -40,6 +41,7 @@ function SubscriptionSection({
     onSwitchPlan: (plan: PlanType, billing: 'monthly' | 'annual') => void
     onPortal: () => void
     onReset: () => void
+    onFullReset: () => void
     onTrialEndDebug: () => void
 }) {
     const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly')
@@ -210,7 +212,7 @@ function SubscriptionSection({
                                 >
                                     {subLoading
                                         ? <Loader2 className="w-4 h-4 animate-spin mx-auto" />
-                                        : isActive ? 'Passer à ce plan' : 'Commencer — 7 jours offerts'
+                                        : isActive ? 'Passer à ce plan' : 'Commencer'
                                     }
                                 </button>
                             </div>
@@ -231,23 +233,30 @@ function SubscriptionSection({
                 </p>
             )}
 
-            {canDebug && subscription && (
+            {canDebug && (
                 <div className="pt-4 border-t flex flex-col gap-3" style={{ borderColor: 'var(--border)' }}>
-                    <div className="flex justify-between items-center gap-4">
+                    <div className="flex justify-between items-center gap-4 flex-wrap">
                         <p className="text-[10px] font-medium" style={{ color: 'var(--text-faint)' }}>
-                            ID Client : {subscription.stripe_customer_id}
+                            {subscription?.stripe_customer_id ? `ID Client : ${subscription.stripe_customer_id}` : 'Aucun abonnement actif'}
                         </p>
-                        <div className="flex gap-4">
-                            <button onClick={onTrialEndDebug} className="text-[10px] text-orange-400 hover:text-orange-500 transition-colors">
-                                [ SIMULATE EXPIRED ]
-                            </button>
-                            <button onClick={onReset} className="text-[10px] text-red-400 hover:text-red-500 transition-colors">
-                                [ RESET DB DEBUG ]
+                        <div className="flex gap-4 flex-wrap">
+                            {subscription && (
+                                <>
+                                    <button onClick={onTrialEndDebug} className="text-[10px] text-orange-400 hover:text-orange-500 transition-colors">
+                                        [ SIMULATE EXPIRED ]
+                                    </button>
+                                    <button onClick={onReset} className="text-[10px] text-red-400 hover:text-red-500 transition-colors">
+                                        [ RESET SUB ]
+                                    </button>
+                                </>
+                            )}
+                            <button onClick={onFullReset} className="text-[10px] text-red-600 hover:text-red-700 font-bold transition-colors">
+                                [ FULL RESET → ONBOARDING ]
                             </button>
                         </div>
                     </div>
                     <p className="text-[9px] text-right leading-none" style={{ color: 'var(--text-faint)' }}>
-                        Le reset supprime uniquement l'entrée en base Avisly. L'abonnement Stripe RESTE ACTIF.
+                        RESET SUB : supprime la subscription en base. FULL RESET : supprime tout le compte (restaurant + données) → onboarding.
                     </p>
                 </div>
             )}
@@ -270,6 +279,7 @@ export default function SettingsPage() {
     const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null)
     const [canDebug, setCanDebug] = useState(false)
     const { setIsDirty, isDirty } = useNavigationGuard()
+    const router = useRouter()
 
     const supabase = createClient()
 
@@ -325,6 +335,8 @@ export default function SettingsPage() {
                     body: JSON.stringify({ sessionId }),
                 }).catch(() => {})
                 setStatus({ type: 'success', message: 'Félicitations ! Votre abonnement est actif.' })
+                // Refresh server components so PlanContext picks up the new plan
+                router.refresh()
             }
             if (searchParams.get('stripe') === 'return') {
                 setStatus({ type: 'success', message: 'Vos modifications ont été prises en compte (Stripe).' })
@@ -401,10 +413,33 @@ export default function SettingsPage() {
         if (!confirm('ATTENTION : Cette action supprime UNIQUEMENT l\'affichage de l\'abonnement dans Avisly (Supabase). \n\nVotre abonnement Stripe RESTERA ACTIF et vous continuerez d\'être prélevé. \n\nUtilisez ceci uniquement pour tester l\'interface d\'achat. Confirmer ?')) return
         setSubLoading(true)
         try {
-            const res = await fetch('/api/stripe/reset', { method: 'POST' })
+            const res = await fetch('/api/stripe/reset', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fullReset: false }),
+            })
             const { success, error } = await res.json()
             if (error) throw new Error(error)
             if (success) { setStatus({ type: 'success', message: 'Abonnement réinitialisé ! Rechargez la page.' }); window.location.reload() }
+        } catch (err: any) {
+            setStatus({ type: 'error', message: err.message })
+        } finally {
+            setSubLoading(false)
+        }
+    }
+
+    const handleFullReset = async () => {
+        if (!confirm('FULL RESET : Cette action supprime le restaurant, toutes les campagnes, rewards, sessions, coupons et la subscription.\n\nTu seras redirigé vers l\'onboarding pour repartir de zéro.\n\nL\'abonnement Stripe REST ACTIF côté Stripe (annule-le manuellement si besoin).\n\nConfirmer ?')) return
+        setSubLoading(true)
+        try {
+            const res = await fetch('/api/stripe/reset', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fullReset: true }),
+            })
+            const { success, error } = await res.json()
+            if (error) throw new Error(error)
+            if (success) window.location.href = '/onboarding'
         } catch (err: any) {
             setStatus({ type: 'error', message: err.message })
         } finally {
@@ -598,6 +633,7 @@ export default function SettingsPage() {
                 </form>
             </div>
 
+            <div id="plans" style={{ scrollMarginTop: '2rem' }}>
             <SubscriptionSection
                 subscription={subscription}
                 subLoading={subLoading}
@@ -606,8 +642,10 @@ export default function SettingsPage() {
                 onSwitchPlan={handleSwitchPlan}
                 onPortal={handlePortal}
                 onReset={handleReset}
+                onFullReset={handleFullReset}
                 onTrialEndDebug={handleTrialEndDebug}
             />
+            </div>
 
             <AnimatePresence>
                 {isDirty && (

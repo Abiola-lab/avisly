@@ -25,7 +25,9 @@ export async function POST(req: Request) {
         }
         // ------------------------
 
-        // Get restaurant
+        const body = await req.json().catch(() => ({}));
+        const fullReset = body.fullReset === true;
+
         const { data: restaurant } = await supabase
             .from('restaurants')
             .select('id')
@@ -36,17 +38,27 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Restaurant non trouvé' }, { status: 404 });
         }
 
-        // Optionnel : Annuler vraiment dans Stripe si on veut nettoyer ?
-        // Mais ici on veut juste réinitialiser l'état Supabase pour re-tester le bouton d'achat.
-
-        const { error } = await supabase
+        // Always delete the subscription
+        const { error: subError } = await supabase
             .from('subscriptions')
             .delete()
             .eq('restaurant_id', restaurant.id);
 
-        if (error) throw error;
+        if (subError) throw subError;
 
-        return NextResponse.json({ success: true, message: 'Abonnement réinitialisé en base locale (Supabase)' });
+        if (fullReset) {
+            // Delete the restaurant — cascades campaigns, rewards, sessions, coupons, analytics
+            const { error: restError } = await supabase
+                .from('restaurants')
+                .delete()
+                .eq('id', restaurant.id);
+
+            if (restError) throw restError;
+
+            return NextResponse.json({ success: true, fullReset: true, message: 'Compte remis à zéro — redirection vers l\'onboarding.' });
+        }
+
+        return NextResponse.json({ success: true, fullReset: false, message: 'Abonnement réinitialisé en base locale (Supabase)' });
 
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });

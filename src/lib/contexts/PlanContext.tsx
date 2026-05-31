@@ -4,14 +4,31 @@ import { createContext, useContext } from 'react'
 import type { PlanType, PlanFeature } from '@/lib/plans'
 import { planHasFeature } from '@/lib/plans'
 
-const PlanContext = createContext<PlanType | null>(null)
-
-export function PlanProvider({ plan, children }: { plan: PlanType | null; children: React.ReactNode }) {
-    return <PlanContext.Provider value={plan}>{children}</PlanContext.Provider>
+interface PlanContextValue {
+    plan: PlanType | null
+    trialEndsAt: Date | null
 }
 
-export function usePlan() {
-    return useContext(PlanContext)
+const PlanContext = createContext<PlanContextValue>({ plan: null, trialEndsAt: null })
+
+export function PlanProvider({
+    plan,
+    trialEndsAt,
+    children,
+}: {
+    plan: PlanType | null
+    trialEndsAt: Date | null
+    children: React.ReactNode
+}) {
+    return <PlanContext.Provider value={{ plan, trialEndsAt }}>{children}</PlanContext.Provider>
+}
+
+export function usePlan(): PlanType | null {
+    return useContext(PlanContext).plan
+}
+
+export function useTrialEndsAt(): Date | null {
+    return useContext(PlanContext).trialEndsAt
 }
 
 export function usePlanFeature(feature: PlanFeature): boolean {

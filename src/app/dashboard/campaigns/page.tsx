@@ -82,17 +82,19 @@ export default function CampaignsPage() {
 
             if (campaigns) {
                 setAllCampaigns(campaigns)
-                const active = campaigns.find(c => c.is_active) || campaigns[0]
+                const active = campaigns.find(c => c.is_active) || campaigns[0] || null
                 setCampaign(active)
 
-                const { data: rewardsData } = await supabase
-                    .from('rewards')
-                    .select('*')
-                    .eq('campaign_id', active.id)
-                    .order('order_index', { ascending: true })
-                    .order('created_at', { ascending: true })
+                if (active) {
+                    const { data: rewardsData } = await supabase
+                        .from('rewards')
+                        .select('*')
+                        .eq('campaign_id', active.id)
+                        .order('order_index', { ascending: true })
+                        .order('created_at', { ascending: true })
 
-                setRewards(rewardsData || [])
+                    setRewards(rewardsData || [])
+                }
             }
         }
         setLoading(false)

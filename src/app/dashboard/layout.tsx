@@ -26,7 +26,9 @@ export default async function DashboardLayout({
         .from('restaurants')
         .select('id, subscription_plan')
         .eq('user_id', user.id)
-        .single()
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
 
     if (!restaurant) {
         redirect('/onboarding')
@@ -34,9 +36,18 @@ export default async function DashboardLayout({
 
     const plan = isValidPlan(restaurant.subscription_plan) ? restaurant.subscription_plan : null
 
+    // Fetch trial_ends_at separately so a missing/uncached column never blocks the layout
+    const { data: trialData } = await supabase
+        .from('restaurants')
+        .select('trial_ends_at')
+        .eq('user_id', user.id)
+        .single()
+
+    const trialEndsAt = trialData?.trial_ends_at ? new Date(trialData.trial_ends_at) : null
+
     return (
         <ThemeProvider>
-            <PlanProvider plan={plan}>
+            <PlanProvider plan={plan} trialEndsAt={trialEndsAt}>
                 <NavigationGuardProvider>
                     <SidebarProvider>
                         <div className="min-h-screen flex" style={{ background: 'var(--bg)' }}>
